@@ -11,6 +11,7 @@ import java.awt.event.ActionListener;
 import java.awt.image.BufferedImage;
 import java.io.File;
 import java.io.IOException;
+import java.util.List;
 
 import javax.imageio.ImageIO;
 import javax.swing.ImageIcon;
@@ -23,7 +24,7 @@ import javax.swing.JScrollPane;
 public class BuildingMenu extends JFrame implements ActionListener {
 	
 	//demo Array
-	String [] buildingName = {"BRAVI北浜","A-PLACE","ビル博丈","a","b","c","d","e","f","g","h","a","b","c","d","e","f","g","h"};
+	
 	JButton[] buildingIcon;
 	JLabel[] buildingLabel;
 	JPanel buttonPanel;
@@ -32,7 +33,7 @@ public class BuildingMenu extends JFrame implements ActionListener {
 	private CallBack callBack;
 	
 	
-	BuildingMenu(CallBack callBack,JButton b1){
+	BuildingMenu(List<String> buildingName,CallBack callBack,JButton b1){
 		
 		super("Input Menu");
 		this.callBack = callBack;
@@ -42,7 +43,7 @@ public class BuildingMenu extends JFrame implements ActionListener {
 		this.setResizable(true);
 		this.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
 		
-		buttonPanel = new JPanel(new GridLayout((buildingName.length/4)+1,4,10,10));
+		buttonPanel = new JPanel(new GridLayout((buildingName.size()/4)+1,4,10,10));
 		//for adding BuildingIcon
 		BufferedImage img ;
 		ImageIcon imageIcon=null;
@@ -56,10 +57,10 @@ public class BuildingMenu extends JFrame implements ActionListener {
 		}
 		
 		//creating buttons
-		buildingIcon = new JButton[buildingName.length];
-		for(int i = 0; i < buildingName.length; i++) {
+		buildingIcon = new JButton[buildingName.size()];
+		for(int i = 0; i < buildingName.size(); i++) {
 			buildingIcon[i] = new JButton();
-			buildingIcon[i].setText(buildingName[i]);
+			buildingIcon[i].setText(buildingName.get(i));
 			buildingIcon[i].setIcon(imageIcon);
 			buttonPanel.add(buildingIcon[i]);
 			buildingIcon[i].addActionListener(this);
@@ -83,7 +84,6 @@ public class BuildingMenu extends JFrame implements ActionListener {
 	public void actionPerformed(ActionEvent e) {
 		// TODO Auto-generated method stub
 		String bldName = ((JButton)e.getSource()).getText();
-		System.out.println(bldName);
 		callBack.onButtonClicked(bldName,b1);
 		
 		this.dispose();

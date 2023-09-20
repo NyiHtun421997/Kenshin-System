@@ -91,8 +91,8 @@ public class InputScreen {
 class MyFrame extends JFrame implements ItemListener,ActionListener,CallBack{
 	
 	JPanel topPanel,bottomPanel1,bottomPanel2,mainBottomPanel,imageCboxPanel;
-	JButton b1,b2,b3,b4,b5,b6,b7;
-	JLabel l1,l2,photo,cboxLabel;
+	JButton b2,b3,b4,b5,b6,b7;
+	JLabel b1,l1,l2,photo,cboxLabel;
 	JComboBox cb;
 	JFormattedTextField tf;
 	JCheckBox cbox;
@@ -125,14 +125,10 @@ class MyFrame extends JFrame implements ItemListener,ActionListener,CallBack{
 		
 		setJMenuBar(menuBar);
 		
-		//Button for buildings
-		b1 = new JButton(buildingName);
-		b1.setBounds(400,5,100,40);
-		b1.addActionListener(
-		(ae)->{
-				BuildingMenu BM01 = new BuildingMenu(this,b1);
-//this = an instance of input screen who is observer and will be observing it's subject,buildingMenu	
-		});
+		//Label for buildings
+		b1 = new JLabel(buildingName);
+		b1.setFont(new Font("Ariel",Font.BOLD,18));
+		b1.setBounds(400,5,200,40);
 		
 		//Button for Floors
 		b2 = new JButton(floor.get(floorIndex));
@@ -335,6 +331,12 @@ class MyFrame extends JFrame implements ItemListener,ActionListener,CallBack{
 					b2.setText(floor.get(floorIndex));
 					refreshPage(floor.get(floorIndex));
 				}
+				else if(floorIndex == floor.size()-1) {
+					//code for submitting objects into temp table of server
+					//code for CS01 Menu
+					
+					
+				}
 				;break;
 				
 				}
@@ -361,12 +363,8 @@ class MyFrame extends JFrame implements ItemListener,ActionListener,CallBack{
 	//meaning if a button is clicked in BM01 or FM01,these methods will be invoked
 	@Override
 	public void onButtonClicked(String componentText,JButton b) {
-		//Checking whether b1 is clicked or b2 is clicked
+		
 		//componentText will accept the text on the button which was clicked on BM01 or FM01
-		if(b==b1) {
-			b1.setText(componentText);
-			
-		}
 		if(b==b2) {
 			b2.setText(componentText);
 			//resetting floorIndex
