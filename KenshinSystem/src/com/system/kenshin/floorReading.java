@@ -5,7 +5,7 @@ import java.util.Date;
 
 public class floorReading implements Serializable{
 	
-	private Double[] readings = new Double[4];
+	private Double[] readings = new Double[4];//電灯、動力、水道、ガス
 	private String[] pictureUrls = new String[4];
 	private String buildingName,floorName;
 	private Date readingDate;

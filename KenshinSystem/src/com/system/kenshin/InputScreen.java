@@ -4,6 +4,7 @@ import java.awt.BorderLayout;
 import java.awt.CardLayout;
 import java.awt.Color;
 import java.awt.Component;
+import java.awt.Container;
 import java.awt.Dimension;
 import java.awt.EventQueue;
 import java.awt.FlowLayout;
@@ -27,6 +28,7 @@ import java.util.List;
 import java.util.Locale;
 
 import javax.imageio.ImageIO;
+import javax.swing.BorderFactory;
 import javax.swing.ImageIcon;
 import javax.swing.JButton;
 import javax.swing.JCheckBox;
@@ -40,7 +42,7 @@ import javax.swing.JMenuBar;
 import javax.swing.JMenuItem;
 import javax.swing.JPanel;
 import javax.swing.JTextField;
-import javax.swing.text.DefaultFormatterFactory;
+import javax.swing.SwingConstants;
 import javax.swing.text.NumberFormatter;
 
 public class InputScreen {
@@ -60,7 +62,11 @@ public class InputScreen {
 			public void run() {
 			try {
 				readingOperation operationForAE = new Operation();	
-				MyFrame f = new MyFrame(operationForAE,buildingName,dateLabel,floor);
+				InputScreenFrame f = new InputScreenFrame(operationForAE,buildingName,dateLabel,floor);
+				f.setSize(1200,800);
+				f.setVisible(true);
+				f.setResizable(false);
+				f.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
 } 
 			catch (Exception e) {
 					e.printStackTrace();
@@ -82,13 +88,17 @@ public class InputScreen {
 			public void run() {
 			try {
 				readingOperation operationForAE = new Operation();	
-				MyFrame f = new MyFrame(operationForAE,buildingName,dateLabel,floor);
+				InputScreenFrame f = new InputScreenFrame(operationForAE,buildingName,dateLabel,floor);;
+				f.setSize(1200,800);
+				f.setVisible(true);
+				f.setResizable(false);
+				f.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
 } 
 			catch (Exception e) {
 					e.printStackTrace();
 
 }}});}}
-class MyFrame extends JFrame implements ItemListener,ActionListener,CallBack{
+class InputScreenFrame extends JFrame implements ItemListener,ActionListener,CallBack{
 	
 	JPanel topPanel,bottomPanel1,bottomPanel2,mainBottomPanel,imageCboxPanel;
 	JButton b2,b3,b4,b5,b6,b7;
@@ -104,10 +114,13 @@ class MyFrame extends JFrame implements ItemListener,ActionListener,CallBack{
 	String unitType [] = {"電灯","動力","水道","ガス"};
 	private readingOperation operationForAE;
 	
-	public static int floorIndex = 0;
+	static int floorIndex = 0;
 	
-	MyFrame(readingOperation operationForAE,String buildingName, String dateLabel, List<String> floor){
+	InputScreenFrame(readingOperation operationForAE,String buildingName, String dateLabel, List<String> floor){
 		super("Input Menu");
+		Container contentPane = this.getContentPane();
+		contentPane.setLayout(new BorderLayout());
+		  
 		this.operationForAE = operationForAE;
 		this.buildingName = buildingName;
 		this.dateLabel = dateLabel;
@@ -132,24 +145,29 @@ class MyFrame extends JFrame implements ItemListener,ActionListener,CallBack{
 		
 		//Button for Floors
 		b2 = new JButton(floor.get(floorIndex));
-		b2.setBounds(550,50,100,40);
+		b2.setBounds(540,45,120,80);
+		b2.setHorizontalAlignment(SwingConstants.CENTER);
+		b2.setBorder(BorderFactory.createEmptyBorder(10, 10, 10, 10));
+		b2.setBackground(new Color(237, 244, 255));
+		ImageIcon floorIcon = new ImageIcon(rescaleImage2("resources/images/floor_icon.png",b2));
+		b2.setIcon(floorIcon);
+		b2.setVerticalTextPosition(JButton.BOTTOM);
+		b2.setHorizontalTextPosition(JButton.CENTER);
 		b2.addActionListener(this);
 		
 		//Label for date
 		l1 = new JLabel(dateLabel);
 		l1.setFont(new Font("Ariel",Font.BOLD,18));
 		l1.setBounds(700,5,200,40);
-		add(l1);
 		
 		//Label for 種別
 		l2 = new JLabel("種別");
-		l2.setBounds(300,130,180,50);
+		l2.setBounds(310,130,180,50);
 		l2.setFont(new Font("Ariel",Font.BOLD,18));
-		add(l2);
 		
 		//ComboBox for 系統
 		cb = new JComboBox(unitType);
-		cb.setBounds(270,160,100,50);
+		cb.setBounds(280,160,100,50);
 		cb.addActionListener(this);
 		
 		//TextField for unit input
@@ -161,7 +179,7 @@ class MyFrame extends JFrame implements ItemListener,ActionListener,CallBack{
 		tf = new JFormattedTextField(nft);
 		tf.setValue(0.0);
 		tf.setColumns(20);
-		tf.setBounds(400,130,380,80);
+		tf.setBounds(410,130,380,80);
 		tf.setHorizontalAlignment(JTextField.CENTER);
 		tf.setFont(new Font("Ariel",Font.BOLD,18));
 		//Making sure only decimal values or numbers are entered
@@ -192,6 +210,7 @@ class MyFrame extends JFrame implements ItemListener,ActionListener,CallBack{
 		topPanel = new JPanel();
 		Dimension panelSize = new Dimension(1200,250);
 		topPanel.setPreferredSize(panelSize);
+		topPanel.setBackground(new Color(237, 244, 255));
 		topPanel.add(b1);
 		topPanel.add(b2);
 		topPanel.add(b3);
@@ -206,6 +225,7 @@ class MyFrame extends JFrame implements ItemListener,ActionListener,CallBack{
 		//For Photo
 		photo = new JLabel();
 		photo.setBounds(400,55,400,360);
+		photo.setHorizontalAlignment(SwingConstants.CENTER);
 		//Get resized image as return value by calling customized rescaleImage()method and pass it as arg to icon
 		//rescaleImage("resources/images/icon2.png",photo);
 		ImageIcon imageIcon = new ImageIcon(rescaleImage("resources/images/icon2.png",photo));
@@ -219,30 +239,36 @@ class MyFrame extends JFrame implements ItemListener,ActionListener,CallBack{
 		//Panel for CheckBox and its Label
 		imageCboxPanel = new JPanel();
 		imageCboxPanel.setLayout(new FlowLayout(FlowLayout.LEFT));
+		imageCboxPanel.setBackground(new Color(237, 244, 255));
 		imageCboxPanel.add(cbox);
 		topPanel.add(imageCboxPanel).setBounds(530,220,400,40);
-		add(topPanel,BorderLayout.NORTH);
+		contentPane.add(topPanel,BorderLayout.NORTH);
 		
 		//Button for Confirm(for bottomPanel1)
 		b5 = new JButton("Confirm");
+		b5.setHorizontalAlignment(SwingConstants.CENTER);
 		//Button for Confirm(for bottomPanel2)
 		b6 = new JButton("Confirm");
+		b6.setHorizontalAlignment(SwingConstants.CENTER);
 		b5.addActionListener(this);
 		b6.addActionListener(this);
 		
 		//Button for Upload Image
 		b7 = new JButton("Upload");
+		b7.setHorizontalAlignment(SwingConstants.CENTER);
 		
 		//Panel for image,"confirm" button,"upload" button
 		bottomPanel1 = new JPanel();
 		bottomPanel1.setLayout(null);
-		bottomPanel1.add(b5).setBounds(520,100,180,50);
+		bottomPanel1.add(b5).setBounds(510,100,180,50);
+		bottomPanel1.setBackground(new Color(237, 244, 255));
 		
 		bottomPanel2 = new JPanel();
 		bottomPanel2.setLayout(null);
 		bottomPanel2.add(photo);
 		bottomPanel2.add(b6).setBounds(510,415,180,50);
 		bottomPanel2.add(b7).setBounds(510,5,180,50);
+		bottomPanel2.setBackground(new Color(237, 244, 255));
 		
 		//Will use card layout to flip between bottomPanel 1 and 2
 		mainBottomPanel = new JPanel();
@@ -250,14 +276,11 @@ class MyFrame extends JFrame implements ItemListener,ActionListener,CallBack{
 		mainBottomPanel.setLayout(cl);
 		mainBottomPanel.add("first",bottomPanel1);
 		mainBottomPanel.add("second",bottomPanel2);
+		mainBottomPanel.setBackground(new Color(237, 244, 255));
 		cl.show(mainBottomPanel, "first");
 		
-		add(mainBottomPanel,BorderLayout.CENTER);
+		contentPane.add(mainBottomPanel,BorderLayout.CENTER);
 		
-		setSize(1200,800);
-		setVisible(true);
-		setResizable(false);
-		setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
 		
 	}
 	@Override
@@ -352,6 +375,18 @@ class MyFrame extends JFrame implements ItemListener,ActionListener,CallBack{
 		try{
 			img = ImageIO.read(new File(path));
 			Image resizedImage = img.getScaledInstance(component.getWidth(), component.getHeight(), Image.SCALE_SMOOTH);
+			return resizedImage;
+		}
+		catch(IOException e) {
+			e.printStackTrace();
+			return null;
+		}
+	}
+	public Image rescaleImage2(String path,Component component) {
+		BufferedImage img = null;
+		try{
+			img = ImageIO.read(new File(path));
+			Image resizedImage = img.getScaledInstance(component.getWidth()-65, component.getHeight()-20, Image.SCALE_SMOOTH);
 			return resizedImage;
 		}
 		catch(IOException e) {

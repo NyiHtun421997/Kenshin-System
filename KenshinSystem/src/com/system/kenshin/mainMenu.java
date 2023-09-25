@@ -3,6 +3,7 @@ package com.system.kenshin;
 import java.awt.Color;
 import java.awt.Component;
 import java.awt.Container;
+import java.awt.EventQueue;
 import java.awt.Font;
 import java.awt.Image;
 import java.awt.event.ActionEvent;
@@ -47,7 +48,7 @@ public class mainMenu extends JFrame implements ActionListener,CallBack{
 		inputButton.setBounds(210,70,200,200);
 		inputButton.setOpaque(true);
 		inputButton.setBorder(BorderFactory.createEmptyBorder(10, 10, 10, 10));
-		inputButton.setBackground(new Color(218,240,249));
+		inputButton.setBackground(new Color(237, 244, 255));
 		ImageIcon imageIcon = new ImageIcon(rescaleImage("resources/images/input.png",inputButton));
 		inputButton.setIcon(imageIcon);
 		inputButton.addActionListener(this);
@@ -61,7 +62,7 @@ public class mainMenu extends JFrame implements ActionListener,CallBack{
 		checkButton.setBounds(500,70,200,200);
 		checkButton.setOpaque(true);
 		checkButton.setBorder(BorderFactory.createEmptyBorder(10, 10, 10, 10));
-		checkButton.setBackground(new Color(218,240,249));
+		checkButton.setBackground(new Color(237, 244, 255));
 		imageIcon = new ImageIcon(rescaleImage("resources/images/check.png",inputButton));
 		checkButton.setIcon(imageIcon);
 		//checkButton.addActionListener(this);
@@ -80,7 +81,7 @@ public class mainMenu extends JFrame implements ActionListener,CallBack{
 		buildingButton.setBounds(410,330,90,90);
 		buildingButton.setOpaque(true);
 		buildingButton.setBorder(BorderFactory.createEmptyBorder(10, 10, 10, 10));
-		buildingButton.setBackground(new Color(218,240,249));
+		buildingButton.setBackground(new Color(237, 244, 255));
 		imageIcon = new ImageIcon(rescaleImage("resources/images/buildings.png",buildingButton));
 		buildingButton.setIcon(imageIcon);
 		buildingButton.addActionListener(this);
@@ -98,16 +99,18 @@ public class mainMenu extends JFrame implements ActionListener,CallBack{
 		contentPane.add(checkLabel);
 		contentPane.add(buildingButton);
 		contentPane.add(buildingLabel2);
-		contentPane.setBackground(new Color(218,240,249));
+		contentPane.setBackground(new Color(237, 244, 255));
 		
 	}
 	@Override
 	public void actionPerformed(ActionEvent ae) {
 		
 		if(ae.getSource()==inputButton) {
+			if(buildingLabel2.getText()!="") {
+				InputScreen inputScreen = new InputScreen(buildingLabel2.getText(),dateLabel,floor);
+				this.dispose();
+			}
 			
-			InputScreen inputScreen = new InputScreen(buildingLabel2.getText(),dateLabel,floor);
-			this.dispose();
 		}
 		if(ae.getSource()==buildingButton) {
 			
@@ -116,13 +119,23 @@ public class mainMenu extends JFrame implements ActionListener,CallBack{
 		
 	}
 	public static void main(String[] arg) {
+		EventQueue.invokeLater(new Runnable() {
+			@Override
+			public void run() {
+			try {
+				mainMenu mMenu = new mainMenu();
+				mMenu.setSize(900,500);
+				mMenu.setVisible(true);
+				mMenu.setResizable(false);
+				mMenu.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
+} 
+			catch (Exception e) {
+					e.printStackTrace();
+
+}}});}
 		
-		mainMenu mMenu = new mainMenu();
-		mMenu.setSize(900,500);
-		mMenu.setVisible(true);
-		mMenu.setResizable(false);
-		mMenu.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
-	}
+		
+	
 	//Sub-program for resizing of images
 		public Image rescaleImage(String path,Component component) {
 			BufferedImage img = null;

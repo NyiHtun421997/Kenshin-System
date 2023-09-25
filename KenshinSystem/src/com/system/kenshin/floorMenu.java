@@ -60,6 +60,8 @@ public class floorMenu extends JFrame implements ActionListener {
 			floorIcon[i] = new JButton();
 			floorIcon[i].setText(floor.get(i));
 			floorIcon[i].setIcon(imageIcon);
+			floorIcon[i].setVerticalTextPosition(JButton.BOTTOM);
+			floorIcon[i].setHorizontalTextPosition(JButton.CENTER);
 			buttonPanel.add(floorIcon[i]);
 			floorIcon[i].addActionListener(this);
 			
