@@ -29,18 +29,21 @@ public class mainMenu extends JFrame implements ActionListener,CallBack{
 	JLabel 	dateJLabel,inputLabel,checkLabel,buildingLabel1,buildingLabel2;
 
 	//these will be inside main menu which will call constructor of InputScreen
-	String dateLabel = "2023年9月";//must follow this ○年○月 pattern
+	String dateLabel = "";//must follow this ○年○月 pattern
 	//will be populated from server
-	List<String> buildingName = new ArrayList<String>(List.of("BRAVI北浜","A-PLACE","ビル博丈","a","b","c","d","e","f","g","h","a","b","c","d","e","f","g","GTL尼崎新都心"));
+	List<String> buildingName = new ArrayList<String>();
 	List<String> floor = new ArrayList<String>(List.of("駐車場","1F","2F","3F"));
+	private HttpService httpService;
 	
 	mainMenu(){
 		
 		super("Main Menu");
 		setLayout(null);
 		Container contentPane = this.getContentPane();
+		httpService = new HttpService();
+		buildingName = httpService.getBuildings();
 		
-		dateJLabel = new JLabel("2023年9月");
+		dateJLabel = new JLabel(dateLabel);
 		dateJLabel.setBounds(405,20,120,40);
 		dateJLabel.setFont(new Font("Ariel",Font.BOLD,18));
 		
@@ -153,6 +156,8 @@ public class mainMenu extends JFrame implements ActionListener,CallBack{
 	public void onButtonClicked(String componentText, JButton b) {
 		
 		buildingLabel2.setText(componentText);
+		dateLabel = httpService.getLatestDate(componentText);
+		dateJLabel.setText(dateLabel);
 		
 	}
 

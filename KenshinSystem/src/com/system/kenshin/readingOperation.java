@@ -9,5 +9,6 @@ public interface readingOperation {
 	public void  setReadings(String floorName,String reading,int readingType);
 	
 	public Double getReading(int index,String floorName);
+	
 
 }

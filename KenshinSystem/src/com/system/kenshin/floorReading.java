@@ -6,10 +6,10 @@ import java.util.Date;
 public class floorReading implements Serializable{
 	
 	private Double[] readings = new Double[4];//電灯、動力、水道、ガス
+	private Double[] readingsBeforeChange = {0d,0d,0d,0d};
 	private String[] pictureUrls = new String[4];
 	private String buildingName,floorName;
 	private Date readingDate;
-	private Boolean approved = false;
 	
 	//Constructor
 	public floorReading(String buildingName, String floorName, Date readingDate,Double reading) {
@@ -37,6 +37,13 @@ public class floorReading implements Serializable{
 	
 	public Double getReading(int i) {
 		return readings[i];
+	}
+	
+	public void setReadingBeforeChange(int i,Double reading) {
+		this.readingsBeforeChange[i] = reading;
+	}
+	public Double getReadingBeforeChange(int i) {
+		return readingsBeforeChange[i];
 	}
 	
 	public void setReading(int i,Double reading) {
@@ -83,13 +90,7 @@ public class floorReading implements Serializable{
 		this.readingDate = readingDate;
 	}
 
-	public Boolean getApproved() {
-		return approved;
-	}
 
-	public void setApproved(Boolean approved) {
-		this.approved = approved;
-	}
 	//ToString
 
 	@Override

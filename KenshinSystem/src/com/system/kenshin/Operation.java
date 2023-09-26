@@ -28,9 +28,6 @@ public class Operation implements readingOperation{
 		}
 	}
 	
-	public void  createReadings() {
-		
-	}
 	@Override
 	public void  setReadings(String floorName,String reading,int readingType) {
 		
@@ -63,10 +60,11 @@ public class Operation implements readingOperation{
 		try {
 			readingDate = dateFormat.parse(dateLabel);
 		}
-		//MUST CATCH EXCEPTION
-		catch(Exception e) {}
+		
+		catch(Exception e) {e.printStackTrace();}
 		return readingDate;
 	}
+	
 	
 
 }
