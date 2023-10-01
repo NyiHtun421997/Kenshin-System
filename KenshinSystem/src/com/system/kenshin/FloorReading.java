@@ -1,25 +1,25 @@
 package com.system.kenshin;
 
 import java.io.Serializable;
-import java.util.Date;
+import java.time.LocalDate;
 
-public class floorReading implements Serializable{
+public class FloorReading implements Serializable{
 	
 	private Double[] readings = new Double[4];//電灯、動力、水道、ガス
 	private Double[] readingsBeforeChange = {0d,0d,0d,0d};
 	private String[] pictureUrls = new String[4];
 	private String buildingName,floorName;
-	private Date readingDate;
+	private LocalDate readingDate;
 	
 	//Constructor
-	public floorReading(String buildingName, String floorName, Date readingDate,Double reading) {
+	public FloorReading(String buildingName, String floorName, LocalDate readingDate,Double reading) {
 		super();
 		this.buildingName = buildingName;
 		this.floorName = floorName;
 		this.readingDate = readingDate;
 		this.readings[0] = reading;
 	}
-	public floorReading(String buildingName,String floorName, Date readingDate) {
+	public FloorReading(String buildingName,String floorName, LocalDate readingDate) {
 		super();
 		this.buildingName = buildingName;
 		this.floorName = floorName;
@@ -38,6 +38,13 @@ public class floorReading implements Serializable{
 	public Double getReading(int i) {
 		return readings[i];
 	}
+
+    public void setReadingsBeforeChange(Double[] readingsBeforeChange) {
+        this.readingsBeforeChange = readingsBeforeChange;
+    }
+	public Double[] getReadingsBeforeChange() {
+        return readingsBeforeChange;
+    }
 	
 	public void setReadingBeforeChange(int i,Double reading) {
 		this.readingsBeforeChange[i] = reading;
@@ -82,17 +89,16 @@ public class floorReading implements Serializable{
 		this.floorName = floorName;
 	}
 
-	public Date getReadingDate() {
+	public LocalDate getReadingDate() {
 		return readingDate;
 	}
 
-	public void setReadingDate(Date readingDate) {
+	public void setReadingDate(LocalDate readingDate) {
 		this.readingDate = readingDate;
 	}
 
 
 	//ToString
-
 	@Override
 	public String toString() {
 		return "floorReading [buildingName=" + buildingName + ", floorName=" + floorName + ", readingDate="

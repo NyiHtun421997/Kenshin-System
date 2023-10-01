@@ -21,7 +21,7 @@ import javax.swing.JLabel;
 import javax.swing.JPanel;
 import javax.swing.JScrollPane;
 
-public class floorMenu extends JFrame implements ActionListener {
+public class FloorMenu extends JFrame implements ActionListener {
 	
 	JButton[] floorIcon;
 	JLabel[] floorLabel;
@@ -31,7 +31,7 @@ public class floorMenu extends JFrame implements ActionListener {
 	private CallBack callBack;
 	
 	
-	floorMenu(List<String> floor,CallBack callBack,JButton b2){
+	FloorMenu(List<String> floor,CallBack callBack,JButton b2){
 		
 		super("Input Menu");
 		this.callBack = callBack;

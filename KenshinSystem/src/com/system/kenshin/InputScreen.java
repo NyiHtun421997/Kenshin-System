@@ -14,16 +14,12 @@ import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.awt.event.ItemEvent;
 import java.awt.event.ItemListener;
-import java.awt.event.KeyListener;
 import java.awt.image.BufferedImage;
 import java.io.File;
 import java.io.IOException;
 import java.text.DecimalFormat;
-import java.text.DecimalFormatSymbols;
 import java.text.NumberFormat;
-import java.text.SimpleDateFormat;
 import java.util.ArrayList;
-import java.util.Date;
 import java.util.List;
 import java.util.Locale;
 
@@ -33,7 +29,6 @@ import javax.swing.ImageIcon;
 import javax.swing.JButton;
 import javax.swing.JCheckBox;
 import javax.swing.JComboBox;
-import javax.swing.JDesktopPane;
 import javax.swing.JFormattedTextField;
 import javax.swing.JFrame;
 import javax.swing.JLabel;
@@ -61,7 +56,7 @@ public class InputScreen {
 			@Override
 			public void run() {
 			try {
-				readingOperation operationForAE = new Operation();	
+				ReadingOperation operationForAE = new Operation();	
 				InputScreenFrame f = new InputScreenFrame(operationForAE,buildingName,dateLabel,floor);
 				f.setSize(1200,800);
 				f.setVisible(true);
@@ -72,13 +67,11 @@ public class InputScreen {
 					e.printStackTrace();
 
 }}});}
-	
-	
 
 	public static void main(String[] args) {
 		//these will be inside main menu which will call constructor of InputScreen
 		String buildingName = "BRAVI北浜";
-		String dateLabel = "2023年9月";//must follow this ○年○月 pattern
+		String dateLabel = "2023年11月";//must follow this ○年○月 pattern
 		//will be populated from server
 		List<String> floor = new ArrayList<String>(List.of("駐車場","1F","2F","3F"));
 		
@@ -87,7 +80,7 @@ public class InputScreen {
 			@Override
 			public void run() {
 			try {
-				readingOperation operationForAE = new Operation();	
+				ReadingOperation operationForAE = new Operation();	
 				InputScreenFrame f = new InputScreenFrame(operationForAE,buildingName,dateLabel,floor);;
 				f.setSize(1200,800);
 				f.setVisible(true);
@@ -112,11 +105,12 @@ class InputScreenFrame extends JFrame implements ItemListener,ActionListener,Cal
 	List<String> floor;
 	
 	String unitType [] = {"電灯","動力","水道","ガス"};
-	private readingOperation operationForAE;
+	private ReadingOperation operationForAE;
+	private HttpService httpService = new HttpService();
 	
 	static int floorIndex = 0;
 	
-	InputScreenFrame(readingOperation operationForAE,String buildingName, String dateLabel, List<String> floor){
+	InputScreenFrame(ReadingOperation operationForAE,String buildingName, String dateLabel, List<String> floor){
 		super("Input Menu");
 		Container contentPane = this.getContentPane();
 		contentPane.setLayout(new BorderLayout());
@@ -131,6 +125,11 @@ class InputScreenFrame extends JFrame implements ItemListener,ActionListener,Cal
 		JMenuBar menuBar = new JMenuBar();
 		JMenu fileMenu = new JMenu("File");
 		JMenuItem saveMenu = new JMenuItem("Save");
+		//Action to save all the obj inside HashMap to TempMap inside Server
+		saveMenu.addActionListener((ActionEvent ae)->{
+			
+			httpService.storeToTempMap(operationForAE.getAllReadings());
+		});
 		
 		fileMenu.add(saveMenu);
 		menuBar.add(fileMenu);
@@ -302,7 +301,7 @@ class InputScreenFrame extends JFrame implements ItemListener,ActionListener,Cal
 		String reading = tf.getText();
 		//If floor button is pressed
 		if(ae.getSource()==b2) {
-			floorMenu FM01 = new floorMenu(floor,this,b2);
+			FloorMenu FM01 = new FloorMenu(floor,this,b2);
 			//this = an instance of input screen who is observer and will be observing it's subject,floorMenu
 			
 		}

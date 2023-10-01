@@ -23,7 +23,7 @@ import javax.swing.JLabel;
 import javax.swing.SwingConstants;
 
 
-public class mainMenu extends JFrame implements ActionListener,CallBack{
+public class MainMenu extends JFrame implements ActionListener,CallBack{
 	
 	JButton inputButton,checkButton,buildingButton;
 	JLabel 	dateJLabel,inputLabel,checkLabel,buildingLabel1,buildingLabel2;
@@ -32,10 +32,10 @@ public class mainMenu extends JFrame implements ActionListener,CallBack{
 	String dateLabel = "";//must follow this ○年○月 pattern
 	//will be populated from server
 	List<String> buildingName = new ArrayList<String>();
-	List<String> floor = new ArrayList<String>(List.of("駐車場","1F","2F","3F"));
+	List<String> floor = new ArrayList<String>();
 	private HttpService httpService;
 	
-	mainMenu(){
+	MainMenu(){
 		
 		super("Main Menu");
 		setLayout(null);
@@ -89,6 +89,7 @@ public class mainMenu extends JFrame implements ActionListener,CallBack{
 		buildingButton.setIcon(imageIcon);
 		buildingButton.addActionListener(this);
 		
+		//Lable for Building Name chosen by user
 		buildingLabel2 = new JLabel();
         buildingLabel2.setBounds(385, 420, 140, 40);
 		buildingLabel2.setFont(new Font("Ariel",Font.BOLD,14));
@@ -110,6 +111,7 @@ public class mainMenu extends JFrame implements ActionListener,CallBack{
 		
 		if(ae.getSource()==inputButton) {
 			if(buildingLabel2.getText()!="") {
+				floor = httpService.getFloorListForBld(buildingLabel2.getText());
 				InputScreen inputScreen = new InputScreen(buildingLabel2.getText(),dateLabel,floor);
 				this.dispose();
 			}
@@ -126,7 +128,7 @@ public class mainMenu extends JFrame implements ActionListener,CallBack{
 			@Override
 			public void run() {
 			try {
-				mainMenu mMenu = new mainMenu();
+				MainMenu mMenu = new MainMenu();
 				mMenu.setSize(900,500);
 				mMenu.setVisible(true);
 				mMenu.setResizable(false);

@@ -9,5 +9,6 @@
 	<classpathentry kind="lib" path="/Users/nyinyihtun/git/repository/KenshinSystem/lib/jackson-annotations-2.15.2.jar"/>
 	<classpathentry kind="lib" path="/Users/nyinyihtun/git/repository/KenshinSystem/lib/jackson-core-2.15.2.jar"/>
 	<classpathentry kind="lib" path="/Users/nyinyihtun/git/repository/KenshinSystem/lib/jackson-databind-2.15.2.jar"/>
+	<classpathentry kind="lib" path="/Users/nyinyihtun/git/repository/KenshinSystem/lib/jackson-datatype-jsr310-2.15.2.jar"/>
 	<classpathentry kind="output" path="bin"/>
 </classpath>
