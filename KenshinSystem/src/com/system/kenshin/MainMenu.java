@@ -33,15 +33,13 @@ public class MainMenu extends JFrame implements ActionListener,CallBack{
 	//will be populated from server
 	List<String> buildingName = new ArrayList<String>();
 	List<String> floor = new ArrayList<String>();
-	private HttpService httpService;
 	
 	MainMenu(){
 		
 		super("Main Menu");
 		setLayout(null);
 		Container contentPane = this.getContentPane();
-		httpService = new HttpService();
-		buildingName = httpService.getBuildings();
+		buildingName = HttpService.getBuildings();
 		
 		dateJLabel = new JLabel(dateLabel);
 		dateJLabel.setBounds(405,20,120,40);
@@ -111,9 +109,12 @@ public class MainMenu extends JFrame implements ActionListener,CallBack{
 		
 		if(ae.getSource()==inputButton) {
 			if(buildingLabel2.getText()!="") {
-				floor = httpService.getFloorListForBld(buildingLabel2.getText());
-				InputScreen inputScreen = new InputScreen(buildingLabel2.getText(),dateLabel,floor);
-				this.dispose();
+				if(!HttpService.checkForBuilding(buildingLabel2.getText())) {
+
+					floor = HttpService.getFloorListForBld(buildingLabel2.getText());
+					InputScreen inputScreen = new InputScreen(buildingLabel2.getText(),dateLabel,floor);
+					this.dispose();
+				}
 			}
 			
 		}
@@ -158,7 +159,7 @@ public class MainMenu extends JFrame implements ActionListener,CallBack{
 	public void onButtonClicked(String componentText, JButton b) {
 		
 		buildingLabel2.setText(componentText);
-		dateLabel = httpService.getLatestDate(componentText);
+		dateLabel = HttpService.getLatestDate(componentText);
 		dateJLabel.setText(dateLabel);
 		
 	}

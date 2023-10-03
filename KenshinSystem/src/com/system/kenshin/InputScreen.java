@@ -35,6 +35,7 @@ import javax.swing.JLabel;
 import javax.swing.JMenu;
 import javax.swing.JMenuBar;
 import javax.swing.JMenuItem;
+import javax.swing.JOptionPane;
 import javax.swing.JPanel;
 import javax.swing.JTextField;
 import javax.swing.SwingConstants;
@@ -106,7 +107,6 @@ class InputScreenFrame extends JFrame implements ItemListener,ActionListener,Cal
 	
 	String unitType [] = {"電灯","動力","水道","ガス"};
 	private ReadingOperation operationForAE;
-	private HttpService httpService = new HttpService();
 	
 	static int floorIndex = 0;
 	
@@ -128,7 +128,22 @@ class InputScreenFrame extends JFrame implements ItemListener,ActionListener,Cal
 		//Action to save all the obj inside HashMap to TempMap inside Server
 		saveMenu.addActionListener((ActionEvent ae)->{
 			
-			httpService.storeToTempMap(operationForAE.getAllReadings());
+			HttpService.storeToTempMap(operationForAE.getAllReadings());
+			
+			//Creating a confirmation dialog box before moving to CS01
+			ImageIcon decorativeIcon = new ImageIcon("resources/images/ask.png");
+			Image decorativeImage = decorativeIcon.getImage();
+			decorativeIcon = new ImageIcon(decorativeImage.getScaledInstance(50, 50, Image.SCALE_SMOOTH));
+	
+	        int choice = JOptionPane.showConfirmDialog(null,"Do you want to proceed?", "Confirmation", JOptionPane.YES_NO_OPTION,JOptionPane.QUESTION_MESSAGE,decorativeIcon);
+			
+	        if(choice == JOptionPane.YES_OPTION) {
+	        	//after saving close this window and jump to CS01
+				CompareScreen compareScreen = new CompareScreen(buildingName,dateLabel);
+				this.dispose();
+	        }
+	        else {}
+			
 		});
 		
 		fileMenu.add(saveMenu);

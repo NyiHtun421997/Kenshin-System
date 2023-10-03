@@ -7,7 +7,6 @@ public class FloorReading implements Serializable{
 	
 	private Double[] readings = new Double[4];//電灯、動力、水道、ガス
 	private Double[] readingsBeforeChange = {0d,0d,0d,0d};
-	private String[] pictureUrls = new String[4];
 	private String buildingName,floorName;
 	private LocalDate readingDate;
 	
@@ -55,22 +54,6 @@ public class FloorReading implements Serializable{
 	
 	public void setReading(int i,Double reading) {
 		this.readings[i] = reading;
-	}
-	
-	public String[] getPictureUrls() {
-		return pictureUrls;
-	}
-	
-	public void setPictureUrls(String[] pictureUrls) {
-		this.pictureUrls=pictureUrls;
-	}
-	
-	public String getPictureUrl(int i) {
-		return pictureUrls[i];
-	}
-	
-	public void setPictureUrl(int i,String pictureUrl) {
-		this.pictureUrls[i] = pictureUrl;
 	}
 
 	public String getBuildingName() {

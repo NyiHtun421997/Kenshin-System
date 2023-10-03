@@ -18,7 +18,7 @@ import com.fasterxml.jackson.datatype.jsr310.*;
 
 public class HttpService {
 	
-	public HttpResponse<String> getMethod(String uri) {
+	private static HttpResponse<String> getMethod(String uri) {
 		
 		HttpClient client = HttpClient.newHttpClient();
 		HttpResponse<String> response;
@@ -37,7 +37,7 @@ public class HttpService {
 		}
 		
 	}
-public HttpResponse<String> postMethod(String uri,FloorReading floorReading) {
+private static HttpResponse<String> postMethod(String uri,FloorReading floorReading) {
 		
 		HttpClient client = HttpClient.newHttpClient();
 		HttpResponse<String> response;
@@ -63,7 +63,7 @@ public HttpResponse<String> postMethod(String uri,FloorReading floorReading) {
 		
 	}
 	
-	public List<String> getBuildings() {
+	public static List<String> getBuildings() {
 		
 		List<String> buildingName = new ArrayList<>();
 
@@ -71,7 +71,9 @@ public HttpResponse<String> postMethod(String uri,FloorReading floorReading) {
 				HttpResponse<String> response = getMethod("http://localhost:8080/api/kenshin/central/building_names");
 			
 			if(response.statusCode() == 200) {
-				ObjectMapper objectMapper = new ObjectMapper();
+				ObjectMapper objectMapper = JsonMapper.builder()
+					    .addModule(new JavaTimeModule())
+					    .build();
 				buildingName = objectMapper.readValue(response.body(), new TypeReference<List<String>>() {});
 				return buildingName;
 			}
@@ -88,7 +90,7 @@ public HttpResponse<String> postMethod(String uri,FloorReading floorReading) {
 		}
 	}
 	
-public String getLatestDate(String buildingName) {
+public static String getLatestDate(String buildingName) {
 		
 		String latestDate;
 		try {
@@ -117,7 +119,7 @@ public String getLatestDate(String buildingName) {
 		}
 	}
 	
-public List<String> getFloorListForBld(String buildingName){
+public static List<String> getFloorListForBld(String buildingName){
 	
 	List<String> floor = new ArrayList<>();
 	try {
@@ -125,7 +127,9 @@ public List<String> getFloorListForBld(String buildingName){
 		HttpResponse<String> response = getMethod("http://localhost:8080/api/kenshin/central/floors?building_name="+encodedBuildingName);
 		
 		if(response.statusCode() == 200) {
-			ObjectMapper objectMapper = new ObjectMapper();
+			ObjectMapper objectMapper = JsonMapper.builder()
+				    .addModule(new JavaTimeModule())
+				    .build();
 			floor = objectMapper.readValue(response.body(), new TypeReference<List<String>>() {});
 			return floor;
 		}
@@ -143,12 +147,93 @@ public List<String> getFloorListForBld(String buildingName){
 		return null;
 	}
 }
-public void storeToTempMap(LinkedHashMap<String,FloorReading> floorReadingsMap) {
+
+public static List<String> getTenantListForBld(String buildingName){
+	
+	List<String> tenants = new ArrayList<>();
+	try {
+		String encodedBuildingName = URLEncoder.encode(buildingName, "UTF-8");
+		HttpResponse<String> response = getMethod("http://localhost:8080/api/kenshin/central/tenants?building_name="+encodedBuildingName);
+		
+		if(response.statusCode() == 200) {
+			ObjectMapper objectMapper = JsonMapper.builder()
+				    .addModule(new JavaTimeModule())
+				    .build();
+			tenants = objectMapper.readValue(response.body(), new TypeReference<List<String>>() {});
+			return tenants;
+		}
+		else {
+			//throw error message;
+			return null;
+		}
+	}
+	catch(UnsupportedEncodingException e) {
+		e.printStackTrace();
+		return null;
+	}
+	catch(IOException e) {
+		e.printStackTrace();
+		return null;
+	}
+}
+public static void storeToTempMap(LinkedHashMap<String,FloorReading> floorReadingsMap) {
 	
 	for(String x: floorReadingsMap.keySet()) {
 		//loop through each reading obj inside HashMap and call post method for each obj
-		postMethod("http://localhost:8080/api/kenshin/central/save_readings",floorReadingsMap.get(x));
+		postMethod("http://localhost:8080/api/kenshin/central/temporary/save_readings",floorReadingsMap.get(x));
 		
+	}
+}
+public static LinkedHashMap<String,FloorReading> getTenantReadings(String buildingName, String dateLabel) {
+	
+	try {
+		String encodedBuildingName = URLEncoder.encode(buildingName,"UTF-8");
+		
+		String encodedReadingDate = URLEncoder.encode(dateLabel,"UTF-8");
+		
+		HttpResponse<String> response = getMethod("http://localhost:8080/api/kenshin/central/past_readings?building_name="+encodedBuildingName+"&reading_date="+encodedReadingDate);
+		
+		if(response.statusCode() == 200) {
+			
+			ObjectMapper objectMapper = JsonMapper.builder()
+				    .addModule(new JavaTimeModule())
+				    .build();
+			LinkedHashMap<String,FloorReading> tenant_readings = objectMapper.readValue(response.body(), new TypeReference<LinkedHashMap<String,FloorReading>>() {});
+			
+			return tenant_readings;
+		}
+		else return null;
+	}
+	
+	catch(UnsupportedEncodingException e) {
+		e.printStackTrace();
+		return null;
+	}
+	catch(IOException e) {
+		e.printStackTrace();
+		return null;
+	}
+
+}
+//before opening input screen,check whether that buliding's data is being made
+public static Boolean checkForBuilding(String buildingName) {
+	
+	try {
+		String encodedBuildingName = URLEncoder.encode(buildingName,"UTF-8");
+		HttpResponse<String> response = getMethod("http://localhost:8080/api/kenshin/central/temporary/check?building_name="+encodedBuildingName);
+		
+		if(response.statusCode() == 200) {
+			return Boolean.parseBoolean(response.body());
+		}
+		else return null;
+	}
+	catch(UnsupportedEncodingException e) {
+		e.printStackTrace();
+		return null;
+	}
+	catch(IOException e) {
+		e.printStackTrace();
+		return null;
 	}
 }
 	

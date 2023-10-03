@@ -7,7 +7,7 @@ import java.util.List;
 
 public class Operation implements ReadingOperation{
 	
-	private static LinkedHashMap<String,FloorReading> floorReadingsMap = new LinkedHashMap<>();
+	private LinkedHashMap<String,FloorReading> floorReadingsMap = new LinkedHashMap<>();
 	
 	@Override
 	public void startOperation(String buildingName, String dateLabel, List<String> floor){

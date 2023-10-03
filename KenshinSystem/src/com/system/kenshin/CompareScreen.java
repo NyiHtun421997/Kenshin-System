@@ -6,10 +6,12 @@ import java.awt.Font;
 import java.awt.GridLayout;
 import java.awt.Image;
 import java.awt.event.ActionEvent;
+import java.awt.event.ActionListener;
 import java.awt.image.BufferedImage;
 import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.awt.Color;
 import java.awt.Component;
@@ -24,10 +26,11 @@ import javax.swing.ImageIcon;
 
 public class CompareScreen{
 	//will accept as arg from IS01/01
-	String buildingName = "BRAVI北浜",dateLabel = "2023"+"年"+"2"+"月";
+	String buildingName,dateLabel;
 	//will accept as arg from server
-	List<String> floor_Tenant = new ArrayList<>(List.of("ShopA","ShopB","ShopC","ShopD"));
+	List<String> floor_Tenant = new ArrayList<>();
 	
+	//For Testing
 	public static void main(String[] args) {
 		//will accept as arg from IS01/01
 		String buildingName = "BRAVI北浜",dateLabel = "2023"+"年"+"2"+"月";
@@ -47,8 +50,12 @@ public class CompareScreen{
 					e.printStackTrace();
 
 	}}});}
-	//needs to get parameterlized
-	public CompareScreen(){
+	
+	public CompareScreen(String buildingName,String dateLabel){
+		
+		this.buildingName = buildingName;
+		this.dateLabel = dateLabel;
+		floor_Tenant = HttpService.getTenantListForBld(buildingName);
 		
 		EventQueue.invokeLater(new Runnable() {
 			@Override
@@ -68,7 +75,7 @@ public class CompareScreen{
 	}
 	
 }
-class CompareScreenFrame extends JFrame{
+class CompareScreenFrame extends JFrame implements ActionListener{
   
 JLabel buildingLabel,dateJLabel,usageLabel,curMonthUsage,prevMonthUsage,prevMonthCompare,prevYearUsage,prevYearCompare;
 JLabel[] readingTypes = new JLabel[4];
@@ -78,6 +85,10 @@ JPanel headerPanel,tablePanel;
 String buildingName,dateLabel;
 List<String> floor_Tenant;
 static int floor_TenantIndex = 0;
+
+LinkedHashMap<String,FloorReading> prevMonthData;
+LinkedHashMap<String,FloorReading> twoMonthBeforeData;
+LinkedHashMap<String,FloorReading> prevYearData;
     
   public CompareScreenFrame(String buildingName, String dateLabel,  List<String> floor_Tenant){
     
@@ -85,11 +96,28 @@ static int floor_TenantIndex = 0;
   this.buildingName = buildingName;
   this.dateLabel = dateLabel;
   this.floor_Tenant = floor_Tenant;
+  
+//converting dateLabel String to last month String
+int thisMonth = Integer.valueOf(dateLabel.substring(dateLabel.indexOf("年")+1,dateLabel.indexOf("月")));
+
+String prevMonth = dateLabel.substring(0,dateLabel.indexOf("年")+1)+Integer.toString(thisMonth-1)+"月";
+prevMonthData = HttpService.getTenantReadings(buildingName, prevMonth);
+
+//converting dateLabel String to twoMonthBefore String
+String twoMonthBefore = dateLabel.substring(0,dateLabel.indexOf("年")+1)+Integer.toString(thisMonth-2)+"月";
+twoMonthBeforeData = HttpService.getTenantReadings(buildingName, twoMonthBefore);
+
+//converting dateLabel String to prevYear String
+int thisYear = Integer.valueOf(dateLabel.substring(0,dateLabel.indexOf("年")));
+String prevYear = Integer.toString(thisYear-1)+dateLabel.substring(dateLabel.indexOf("年"));
+prevYearData = HttpService.getTenantReadings(buildingName, prevYear);
+
+
   Container contentPane = this.getContentPane();
   contentPane.setLayout(null);
 
 buildingLabel = new JLabel(buildingName);
-buildingLabel.setBounds(550,20,100,30);
+buildingLabel.setBounds(500,20,200,30);
 buildingLabel.setFont(new Font("Ariel",Font.BOLD,18));
 buildingLabel.setHorizontalAlignment(SwingConstants.CENTER);
 
@@ -105,6 +133,7 @@ nextButton.setBorder(BorderFactory.createEmptyBorder(10, 10, 10, 10));
 nextButton.setBackground(new Color(237, 244, 255));
 ImageIcon imageIcon = new ImageIcon(rescaleImage("resources/images/next.png",nextButton));
 nextButton.setIcon(imageIcon);
+nextButton.addActionListener(this);
 
 locationButton = new JButton(floor_Tenant.get(floor_TenantIndex));//floor + tenant
 locationButton.setVerticalTextPosition(JButton.BOTTOM);
@@ -116,6 +145,7 @@ locationButton.setBorder(BorderFactory.createEmptyBorder(10, 10, 10, 10));
 locationButton.setBackground(new Color(237, 244, 255));
 imageIcon = new ImageIcon(rescaleImage("resources/images/destination.png",locationButton));
 locationButton.setIcon(imageIcon);
+locationButton.addActionListener(this);
 
 prevButton = new JButton();
 prevButton.setBounds(430,120,80,80);
@@ -124,6 +154,7 @@ prevButton.setBorder(BorderFactory.createEmptyBorder(10, 10, 10, 10));
 prevButton.setBackground(new Color(237, 244, 255));
 imageIcon = new ImageIcon(rescaleImage("resources/images/previous.png",prevButton));
 prevButton.setIcon(imageIcon);
+prevButton.addActionListener(this);
 
 //building table
 //headers
@@ -134,14 +165,14 @@ usageLabel.setBackground(new Color(244, 250, 230));
 usageLabel.setFont(new Font(null,Font.BOLD,16));
 usageLabel.setBorder(BorderFactory.createLineBorder(Color.black, 3));
 
-curMonthUsage = new JLabel("Current Month");
+curMonthUsage = new JLabel(dateLabel);
 curMonthUsage.setHorizontalAlignment(SwingConstants.CENTER);
 curMonthUsage.setOpaque(true);
 curMonthUsage.setBackground(new Color(244, 250, 230));
 curMonthUsage.setFont(new Font(null,Font.BOLD,16));
 curMonthUsage.setBorder(BorderFactory.createLineBorder(Color.black, 3));
 
-prevMonthUsage = new JLabel("Prev Month");
+prevMonthUsage = new JLabel(prevMonth);
 prevMonthUsage.setHorizontalAlignment(SwingConstants.CENTER);
 prevMonthUsage.setOpaque(true);
 prevMonthUsage.setBackground(new Color(244, 250, 230));
@@ -155,7 +186,7 @@ prevMonthCompare.setBackground(new Color(244, 250, 230));
 prevMonthCompare.setFont(new Font(null,Font.BOLD,16));
 prevMonthCompare.setBorder(BorderFactory.createLineBorder(Color.black, 3));
 
-prevYearUsage = new JLabel("Last Year");
+prevYearUsage = new JLabel(prevYear);
 prevYearUsage.setHorizontalAlignment(SwingConstants.CENTER);
 prevYearUsage.setOpaque(true);
 prevYearUsage.setBackground(new Color(244, 250, 230));
@@ -225,6 +256,27 @@ contentPane.add(tablePanel);
 contentPane.setBackground(new Color(237, 244, 255));
 		
 }
+  @Override
+	public void actionPerformed(ActionEvent ae) {
+	//if up button is pressed
+			if(ae.getSource()==nextButton) {
+				if(floor_TenantIndex<floor_Tenant.size()-1) {
+					floor_TenantIndex++;
+					locationButton.setText(floor_Tenant.get(floor_TenantIndex));
+				}
+		
+			}
+			
+			//if down button is pressed
+			if(ae.getSource()==prevButton) {
+				if(floor_TenantIndex>0) {
+					floor_TenantIndex--;
+					locationButton.setText(floor_Tenant.get(floor_TenantIndex));
+				}
+				
+			}
+		
+	}
 //Sub-program for resizing of images
 		public Image rescaleImage(String path,Component component) {
 			BufferedImage img = null;
