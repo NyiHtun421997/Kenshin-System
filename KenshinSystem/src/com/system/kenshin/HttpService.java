@@ -184,6 +184,8 @@ public static void storeToTempMap(LinkedHashMap<String,FloorReading> floorReadin
 		
 	}
 }
+
+//getting tenant readings from DB
 public static LinkedHashMap<String,FloorReading> getTenantReadings(String buildingName, String dateLabel) {
 	
 	try {
@@ -215,6 +217,39 @@ public static LinkedHashMap<String,FloorReading> getTenantReadings(String buildi
 	}
 
 }
+
+
+//getting tenant readings temporarily stored on server
+public static LinkedHashMap<String,FloorReading> getTenantReadingsFromTempo(String buildingName) {
+	
+	try {
+		String encodedBuildingName = URLEncoder.encode(buildingName,"UTF-8");
+		
+		HttpResponse<String> response = getMethod("http://localhost:8080/api/kenshin/central/temporary/get_readings?building_name="+encodedBuildingName);
+		
+		if(response.statusCode() == 200) {
+			
+			ObjectMapper objectMapper = JsonMapper.builder()
+				    .addModule(new JavaTimeModule())
+				    .build();
+			LinkedHashMap<String,FloorReading> tenant_readings = objectMapper.readValue(response.body(), new TypeReference<LinkedHashMap<String,FloorReading>>() {});
+			
+			return tenant_readings;
+		}
+		else return null;
+	}
+	
+	catch(UnsupportedEncodingException e) {
+		e.printStackTrace();
+		return null;
+	}
+	catch(IOException e) {
+		e.printStackTrace();
+		return null;
+	}
+
+}
+
 //before opening input screen,check whether that buliding's data is being made
 public static Boolean checkForBuilding(String buildingName) {
 	

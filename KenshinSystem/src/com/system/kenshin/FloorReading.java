@@ -9,6 +9,7 @@ public class FloorReading implements Serializable{
 	private Double[] readingsBeforeChange = {0d,0d,0d,0d};
 	private String buildingName,floorName;
 	private LocalDate readingDate;
+	private String comment="";
 	
 	//Constructor
 	public FloorReading(String buildingName, String floorName, LocalDate readingDate,Double reading) {
@@ -24,6 +25,7 @@ public class FloorReading implements Serializable{
 		this.floorName = floorName;
 		this.readingDate = readingDate;
 	}
+	public FloorReading() {}
 	
 	//Getters and Setters
 	public Double[] getReadings() {
@@ -80,7 +82,12 @@ public class FloorReading implements Serializable{
 		this.readingDate = readingDate;
 	}
 
-
+	public String getComment() {
+		return comment;
+	}
+	public void setComment(String comment) {
+		this.comment = comment;
+	}
 	//ToString
 	@Override
 	public String toString() {

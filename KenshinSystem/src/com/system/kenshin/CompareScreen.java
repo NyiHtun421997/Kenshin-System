@@ -33,9 +33,9 @@ public class CompareScreen{
 	//For Testing
 	public static void main(String[] args) {
 		//will accept as arg from IS01/01
-		String buildingName = "BRAVI北浜",dateLabel = "2023"+"年"+"2"+"月";
+		String buildingName = "Sample Building C",dateLabel = "2023"+"年"+"11"+"月";
 		//will accept as arg from server
-		List<String> floor_Tenant = new ArrayList<>(List.of("1F・ShopA","2F・ShopB","2F・ShopC","3F・ShopD"));
+		List<String> floor_Tenant = new ArrayList<>(List.of("1F・Dental","1F・Convinienece","2F・ABC＿CompanyLimited","3F・大京"));
 	    EventQueue.invokeLater(new Runnable() {
 			@Override
 			public void run() {
@@ -86,9 +86,11 @@ String buildingName,dateLabel;
 List<String> floor_Tenant;
 static int floor_TenantIndex = 0;
 
+LinkedHashMap<String,FloorReading> currentMonthData;
 LinkedHashMap<String,FloorReading> prevMonthData;
 LinkedHashMap<String,FloorReading> twoMonthBeforeData;
-LinkedHashMap<String,FloorReading> prevYearData;
+LinkedHashMap<String,FloorReading> prevYearSameMonthData;
+LinkedHashMap<String,FloorReading> prevYearPrevMonthData;
     
   public CompareScreenFrame(String buildingName, String dateLabel,  List<String> floor_Tenant){
     
@@ -97,22 +99,32 @@ LinkedHashMap<String,FloorReading> prevYearData;
   this.dateLabel = dateLabel;
   this.floor_Tenant = floor_Tenant;
   
+//Readings for current month  
+currentMonthData = HttpService.getTenantReadingsFromTempo(buildingName);
+  
 //converting dateLabel String to last month String
 int thisMonth = Integer.valueOf(dateLabel.substring(dateLabel.indexOf("年")+1,dateLabel.indexOf("月")));
+int thisYear = Integer.valueOf(dateLabel.substring(0,dateLabel.indexOf("年")));
 
-String prevMonth = dateLabel.substring(0,dateLabel.indexOf("年")+1)+Integer.toString(thisMonth-1)+"月";
+String prevMonth = String.format("%4d-%02d-01",thisYear,thisMonth-1);
+//Readings for previous month
 prevMonthData = HttpService.getTenantReadings(buildingName, prevMonth);
 
 //converting dateLabel String to twoMonthBefore String
-String twoMonthBefore = dateLabel.substring(0,dateLabel.indexOf("年")+1)+Integer.toString(thisMonth-2)+"月";
+String twoMonthBefore = String.format("%4d-%02d-01",thisYear,thisMonth-2);
+//Readings for two months before
 twoMonthBeforeData = HttpService.getTenantReadings(buildingName, twoMonthBefore);
 
 //converting dateLabel String to prevYear String
-int thisYear = Integer.valueOf(dateLabel.substring(0,dateLabel.indexOf("年")));
-String prevYear = Integer.toString(thisYear-1)+dateLabel.substring(dateLabel.indexOf("年"));
-prevYearData = HttpService.getTenantReadings(buildingName, prevYear);
+String prevYear = String.format("%4d-%02d-01",thisYear-1,thisMonth);
+//Readings for previous year same month
+prevYearSameMonthData = HttpService.getTenantReadings(buildingName, prevYear);
+//Readings for previous year previous month
+String prevYearPrevMonth = String.format("%4d-%02d-01",thisYear-1,thisMonth-1);
+prevYearPrevMonthData = HttpService.getTenantReadings(buildingName, prevYearPrevMonth);
+//*********************Calculation Part*************************************
 
-
+//*********************GUI Part*********************************************
   Container contentPane = this.getContentPane();
   contentPane.setLayout(null);
 
@@ -172,7 +184,7 @@ curMonthUsage.setBackground(new Color(244, 250, 230));
 curMonthUsage.setFont(new Font(null,Font.BOLD,16));
 curMonthUsage.setBorder(BorderFactory.createLineBorder(Color.black, 3));
 
-prevMonthUsage = new JLabel(prevMonth);
+prevMonthUsage = new JLabel(String.format("%4d年%2d月",thisYear,thisMonth-1));
 prevMonthUsage.setHorizontalAlignment(SwingConstants.CENTER);
 prevMonthUsage.setOpaque(true);
 prevMonthUsage.setBackground(new Color(244, 250, 230));
@@ -186,7 +198,7 @@ prevMonthCompare.setBackground(new Color(244, 250, 230));
 prevMonthCompare.setFont(new Font(null,Font.BOLD,16));
 prevMonthCompare.setBorder(BorderFactory.createLineBorder(Color.black, 3));
 
-prevYearUsage = new JLabel(prevYear);
+prevYearUsage = new JLabel(String.format("%4d年%2d月",thisYear-1,thisMonth));
 prevYearUsage.setHorizontalAlignment(SwingConstants.CENTER);
 prevYearUsage.setOpaque(true);
 prevYearUsage.setBackground(new Color(244, 250, 230));
@@ -212,7 +224,6 @@ headerPanel.add(prevYearUsage);
 headerPanel.add(prevYearCompare);
 
 //Table Body
-
 tablePanel = new JPanel();
 tablePanel.setLayout(new GridLayout(4,6,10,10));
 tablePanel.setBounds(150,290,900,280);
@@ -222,7 +233,7 @@ readingTypes[0] = new JLabel("電灯");
 readingTypes[1] = new JLabel("動力");
 readingTypes[2] = new JLabel("水道");
 readingTypes[3] = new JLabel("ガス");
-
+//Setting up Table
 for(int i = 0; i<4; i++) {
 	
 	readingTypes[i].setHorizontalAlignment(SwingConstants.CENTER);
@@ -234,13 +245,13 @@ for(int i = 0; i<4; i++) {
 	
 	for(int j = 0; j<5; j++) {
 		
-		lb[j] = new JLabel();
-		lb[j].setHorizontalAlignment(SwingConstants.CENTER);
-		lb[j].setOpaque(true);
-		lb[j].setBackground(new Color(205, 230, 250));
-		lb[j].setFont(new Font(null,Font.PLAIN,16));
-		lb[j].setBorder(BorderFactory.createLineBorder(Color.black, 2));
-		tablePanel.add(lb[j]);
+		lb[j+(5*i)] = new JLabel();
+		lb[j+(5*i)].setHorizontalAlignment(SwingConstants.CENTER);
+		lb[j+(5*i)].setOpaque(true);
+		lb[j+(5*i)].setBackground(new Color(205, 230, 250));
+		lb[j+(5*i)].setFont(new Font(null,Font.PLAIN,16));
+		lb[j+(5*i)].setBorder(BorderFactory.createLineBorder(Color.black, 2));
+		tablePanel.add(lb[j+(5*i)]);
 	}
 	
 }
@@ -254,6 +265,8 @@ contentPane.add(headerPanel);
 contentPane.add(tablePanel);
 
 contentPane.setBackground(new Color(237, 244, 255));
+//filling up Table
+refreshPage(floor_Tenant.get(floor_TenantIndex));
 		
 }
   @Override
@@ -263,6 +276,7 @@ contentPane.setBackground(new Color(237, 244, 255));
 				if(floor_TenantIndex<floor_Tenant.size()-1) {
 					floor_TenantIndex++;
 					locationButton.setText(floor_Tenant.get(floor_TenantIndex));
+					refreshPage(floor_Tenant.get(floor_TenantIndex));
 				}
 		
 			}
@@ -272,6 +286,7 @@ contentPane.setBackground(new Color(237, 244, 255));
 				if(floor_TenantIndex>0) {
 					floor_TenantIndex--;
 					locationButton.setText(floor_Tenant.get(floor_TenantIndex));
+					refreshPage(floor_Tenant.get(floor_TenantIndex));
 				}
 				
 			}
@@ -288,6 +303,55 @@ contentPane.setBackground(new Color(237, 244, 255));
 			catch(IOException e) {
 				e.printStackTrace();
 				return null;
+			}
+		}
+		//after changing tenant name,page needs to be refreshed,get data from HashMap and load it into textfield
+		public void refreshPage(String tenantName) {
+			
+			for(int i = 0; i<4; i++) {
+				//i=0(電灯) i=1(動力) i=2(水道) i=3(ガス)
+				Double currentMonthReading = currentMonthData.get(tenantName).getReading(i);
+				
+				Double prevMonthReading = prevMonthData.get(tenantName).getReading(i);
+				Double twoMonthBeforeReading = twoMonthBeforeData.get(tenantName).getReading(i);
+				Double prevYearSameMonthReadng = prevYearSameMonthData.get(tenantName).getReading(i);
+				Double prevYearPrevMonthReading = prevYearPrevMonthData.get(tenantName).getReading(i);
+				
+				Double currentMonthReadingBeforeChange = currentMonthData.get(tenantName).getReadingBeforeChange(i);
+				Double prevMonthReadingBeforeChange = prevMonthData.get(tenantName).getReadingBeforeChange(i);
+				Double twoMonthBeforeReadingBeforeChange = twoMonthBeforeData.get(tenantName).getReadingBeforeChange(i);
+				Double prevYearSameMonthReadngBeforeChange = prevYearSameMonthData.get(tenantName).getReadingBeforeChange(i);
+				Double prevYearPrevMonthReadingBeforeChange = prevYearPrevMonthData.get(tenantName).getReadingBeforeChange(i);
+				
+				//Setting datas to the table
+				Double currentMonthUsage = (currentMonthReading+currentMonthReadingBeforeChange)-(prevMonthReading+prevMonthReadingBeforeChange);
+				currentMonthUsage = Math.ceil(currentMonthUsage * 100)/100;
+				
+				Double previousMonthUsage = (prevMonthReading+prevMonthReadingBeforeChange)-(twoMonthBeforeReading+twoMonthBeforeReadingBeforeChange);
+				previousMonthUsage = Math.ceil(previousMonthUsage * 100)/100;
+				Double previousYearUsage = (prevYearSameMonthReadng+prevYearSameMonthReadngBeforeChange)-(prevYearPrevMonthReading+prevYearPrevMonthReadingBeforeChange);
+				previousYearUsage = Math.ceil(previousYearUsage * 100)/100;
+				Integer prevMonthCompare = (int) Math.round(100*currentMonthUsage/previousMonthUsage);
+				Integer prevYearCompare = (int) Math.round(100*currentMonthUsage/previousYearUsage);
+				
+				lb[0+(5*i)].setText(String.format("%.2f",currentMonthUsage));
+				lb[1+(5*i)].setText(String.format("%.2f",previousMonthUsage));
+				lb[2+(5*i)].setText(String.format("%d%%",prevMonthCompare));
+
+				if(prevMonthCompare < 50 || prevMonthCompare > 150) {
+					System.out.println("Compare: " + prevMonthCompare);
+					lb[2+(5*i)].setForeground(Color.red);
+				}
+				else lb[2+(5*i)].setForeground(Color.black);
+				lb[3+(5*i)].setText(String.format("%.2f",previousYearUsage));
+				lb[4+(5*i)].setText(String.format("%d%%", prevYearCompare));
+				
+				if(prevYearCompare < 0 || prevYearCompare > 150) {
+					System.out.println("Compare: " + prevYearCompare);
+					lb[4+(5*i)].setForeground(Color.red);
+				}
+				else lb[4+(5*i)].setForeground(Color.black);
+				
 			}
 		}
     
