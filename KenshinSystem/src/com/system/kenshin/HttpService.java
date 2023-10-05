@@ -37,7 +37,7 @@ public class HttpService {
 		}
 		
 	}
-private static HttpResponse<String> postMethod(String uri,FloorReading floorReading) {
+private static HttpResponse<String> postMethod(String uri,Object object) {
 		
 		HttpClient client = HttpClient.newHttpClient();
 		HttpResponse<String> response;
@@ -45,7 +45,8 @@ private static HttpResponse<String> postMethod(String uri,FloorReading floorRead
 			ObjectMapper objectMapper = JsonMapper.builder()
 				    .addModule(new JavaTimeModule())
 				    .build();
-			String json = objectMapper.writeValueAsString(floorReading);
+			String json = objectMapper.writeValueAsString(object);
+			//Testing
 			System.out.println(json);
 			HttpRequest request = HttpRequest.newBuilder()
 									.header("Content-Type", "application/json")
@@ -269,6 +270,20 @@ public static Boolean checkForBuilding(String buildingName) {
 	catch(IOException e) {
 		e.printStackTrace();
 		return null;
+	}
+}
+
+//method for saving comments for readings of each tenant
+public static void storeComments(LinkedHashMap<String,String> commentData, String buildingName) {
+	
+	try {
+		String encodedBuildingName =URLEncoder.encode(buildingName,"UTF-8"); 
+			//loop through each reading obj inside HashMap and call post method
+			postMethod("http://localhost:8080/api/kenshin/central/temporary/save_comments?building_name="+encodedBuildingName,commentData);			
+	}
+	catch(UnsupportedEncodingException e) {
+		e.printStackTrace();
+		
 	}
 }
 	

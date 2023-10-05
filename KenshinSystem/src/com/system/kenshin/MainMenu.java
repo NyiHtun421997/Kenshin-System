@@ -121,6 +121,7 @@ public class MainMenu extends JFrame implements ActionListener,CallBack{
 		if(ae.getSource()==buildingButton) {
 			
 			BuildingMenu BM01 = new BuildingMenu(buildingName,this,buildingButton);
+			//this = an instance of input screen frame who implements CallBack interface and acts as observer and will be observing it's subject,buildingMenu
 		}
 		
 	}
@@ -139,9 +140,7 @@ public class MainMenu extends JFrame implements ActionListener,CallBack{
 					e.printStackTrace();
 
 }}});}
-		
-		
-	
+			
 	//Sub-program for resizing of images
 		public Image rescaleImage(String path,Component component) {
 			BufferedImage img = null;
@@ -157,7 +156,7 @@ public class MainMenu extends JFrame implements ActionListener,CallBack{
 		}
 	@Override
 	public void onButtonClicked(String componentText, JButton b) {
-		
+		//componentText will accept the text of the button which was clicked on BM01
 		buildingLabel2.setText(componentText);
 		dateLabel = HttpService.getLatestDate(componentText);
 		dateJLabel.setText(dateLabel);

@@ -17,8 +17,13 @@ import java.awt.Color;
 import java.awt.Component;
 import javax.swing.JFrame;
 import javax.swing.JLabel;
+import javax.swing.JMenu;
+import javax.swing.JMenuBar;
+import javax.swing.JMenuItem;
 import javax.swing.JButton;
 import javax.swing.JPanel;
+import javax.swing.JScrollPane;
+import javax.swing.JTextArea;
 import javax.swing.SwingConstants;
 import javax.imageio.ImageIO;
 import javax.swing.BorderFactory;
@@ -75,13 +80,14 @@ public class CompareScreen{
 	}
 	
 }
-class CompareScreenFrame extends JFrame implements ActionListener{
+class CompareScreenFrame extends JFrame implements ActionListener,CallBack{
   
 JLabel buildingLabel,dateJLabel,usageLabel,curMonthUsage,prevMonthUsage,prevMonthCompare,prevYearUsage,prevYearCompare;
 JLabel[] readingTypes = new JLabel[4];
 JLabel[] lb = new JLabel[20];
-JButton locationButton,nextButton,prevButton;
+JButton locationButton,nextButton,prevButton,confirmButton;
 JPanel headerPanel,tablePanel;
+JTextArea commentBox;
 String buildingName,dateLabel;
 List<String> floor_Tenant;
 static int floor_TenantIndex = 0;
@@ -91,6 +97,8 @@ LinkedHashMap<String,FloorReading> prevMonthData;
 LinkedHashMap<String,FloorReading> twoMonthBeforeData;
 LinkedHashMap<String,FloorReading> prevYearSameMonthData;
 LinkedHashMap<String,FloorReading> prevYearPrevMonthData;
+//Collection to store comments for each reading
+LinkedHashMap<String,String> commentData;
     
   public CompareScreenFrame(String buildingName, String dateLabel,  List<String> floor_Tenant){
     
@@ -122,11 +130,26 @@ prevYearSameMonthData = HttpService.getTenantReadings(buildingName, prevYear);
 //Readings for previous year previous month
 String prevYearPrevMonth = String.format("%4d-%02d-01",thisYear-1,thisMonth-1);
 prevYearPrevMonthData = HttpService.getTenantReadings(buildingName, prevYearPrevMonth);
+
+commentData = new LinkedHashMap<>();
 //*********************Calculation Part*************************************
 
 //*********************GUI Part*********************************************
   Container contentPane = this.getContentPane();
   contentPane.setLayout(null);
+  
+ JMenuBar menuBar = new JMenuBar();
+ JMenu fileMenu = new JMenu("File");
+ JMenuItem saveMenu = new JMenuItem("Save");
+ fileMenu.add(saveMenu);
+ menuBar.add(fileMenu);
+ setJMenuBar(menuBar);
+ 
+ saveMenu.addActionListener((ActionEvent ae)->{
+	 
+	 HttpService.storeComments(commentData, buildingName);
+	 //this.dispose();
+ });
 
 buildingLabel = new JLabel(buildingName);
 buildingLabel.setBounds(500,20,200,30);
@@ -255,6 +278,16 @@ for(int i = 0; i<4; i++) {
 	}
 	
 }
+commentBox = new JTextArea(10,20);
+commentBox.setFont(new Font(null,Font.PLAIN,16));
+JScrollPane scrollPane = new JScrollPane(commentBox);
+scrollPane.setBounds(150, 580, 900, 100);
+
+//For Confirm Button
+confirmButton = new JButton("Confirm");
+confirmButton.setHorizontalAlignment(SwingConstants.CENTER);
+confirmButton.setBounds(530,680,140,50);
+confirmButton.addActionListener(this);
 
 contentPane.add(buildingLabel);
 contentPane.add(dateJLabel);
@@ -263,8 +296,11 @@ contentPane.add(locationButton);
 contentPane.add(prevButton);
 contentPane.add(headerPanel);
 contentPane.add(tablePanel);
+contentPane.add(scrollPane);
+contentPane.add(confirmButton);
 
 contentPane.setBackground(new Color(237, 244, 255));
+this.getRootPane().setDefaultButton(confirmButton);
 //filling up Table
 refreshPage(floor_Tenant.get(floor_TenantIndex));
 		
@@ -272,7 +308,7 @@ refreshPage(floor_Tenant.get(floor_TenantIndex));
   @Override
 	public void actionPerformed(ActionEvent ae) {
 	//if up button is pressed
-			if(ae.getSource()==nextButton) {
+			if(ae.getSource() == nextButton) {
 				if(floor_TenantIndex<floor_Tenant.size()-1) {
 					floor_TenantIndex++;
 					locationButton.setText(floor_Tenant.get(floor_TenantIndex));
@@ -282,13 +318,29 @@ refreshPage(floor_Tenant.get(floor_TenantIndex));
 			}
 			
 			//if down button is pressed
-			if(ae.getSource()==prevButton) {
+			if(ae.getSource() == prevButton) {
 				if(floor_TenantIndex>0) {
 					floor_TenantIndex--;
 					locationButton.setText(floor_Tenant.get(floor_TenantIndex));
 					refreshPage(floor_Tenant.get(floor_TenantIndex));
 				}
 				
+			}
+			
+			//if Location button is pressed
+			if(ae.getSource() == locationButton) {
+				
+				ChoiceMenu FM01 = new ChoiceMenu(floor_Tenant,this,locationButton);
+				//this = an instance of input screen frame who implements CallBack interface and acts as observer and will be observing it's subject,choiceMenu
+				
+			}
+			
+			//if Confirm button is pressed
+			if(ae.getSource() == confirmButton) {
+				
+				String floor_TenantName = floor_Tenant.get(floor_TenantIndex);
+				commentData.put(floor_TenantName, commentBox.getText());				
+				nextButton.doClick();
 			}
 		
 	}
@@ -339,7 +391,7 @@ refreshPage(floor_Tenant.get(floor_TenantIndex));
 				lb[2+(5*i)].setText(String.format("%d%%",prevMonthCompare));
 
 				if(prevMonthCompare < 50 || prevMonthCompare > 150) {
-					System.out.println("Compare: " + prevMonthCompare);
+					
 					lb[2+(5*i)].setForeground(Color.red);
 				}
 				else lb[2+(5*i)].setForeground(Color.black);
@@ -347,12 +399,25 @@ refreshPage(floor_Tenant.get(floor_TenantIndex));
 				lb[4+(5*i)].setText(String.format("%d%%", prevYearCompare));
 				
 				if(prevYearCompare < 0 || prevYearCompare > 150) {
-					System.out.println("Compare: " + prevYearCompare);
+					
 					lb[4+(5*i)].setForeground(Color.red);
 				}
 				else lb[4+(5*i)].setForeground(Color.black);
 				
 			}
+			String floor_TenantName = floor_Tenant.get(floor_TenantIndex);
+			commentBox.setText(commentData.get(floor_TenantName));
+		}
+		@Override
+		public void onButtonClicked(String componentText, JButton b) {
+			
+			if(b==locationButton) {
+				locationButton.setText(componentText);
+				//resetting floorIndex
+				floor_TenantIndex = floor_Tenant.indexOf(componentText);
+				refreshPage(componentText);
+				
+			}		
 		}
     
 }

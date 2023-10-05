@@ -24,10 +24,11 @@ public class Operation implements ReadingOperation{
 	}
 	
 	@Override
-	public void  setReadings(String floorName,String reading,int readingType) {
+	public void  setReadings(String floorName,String reading,String readingBeforeChange,int readingType) {
 		
 		FloorReading newReading = floorReadingsMap.get(floorName);
 		newReading.setReading(readingType, Double.parseDouble(reading));
+		newReading.setReadingBeforeChange(readingType, Double.parseDouble(readingBeforeChange));
 		floorReadingsMap.put(floorName, newReading);
 		
 		//For Testing
@@ -41,6 +42,12 @@ public class Operation implements ReadingOperation{
 	public Double getReading(int index,String floorName) {
 		FloorReading reading = floorReadingsMap.get(floorName);
 		return reading.getReading(index);
+	}
+	
+	@Override
+	public Double getReadingBeforeChange(int index,String floorName) {
+		FloorReading reading = floorReadingsMap.get(floorName);
+		return reading.getReadingBeforeChange(index);
 	}
 	
 	@Override

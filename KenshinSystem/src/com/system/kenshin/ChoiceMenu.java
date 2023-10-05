@@ -1,9 +1,6 @@
 package com.system.kenshin;
 
-import java.awt.Component;
 import java.awt.Dimension;
-import java.awt.EventQueue;
-import java.awt.FlowLayout;
 import java.awt.GridLayout;
 import java.awt.Image;
 import java.awt.event.ActionEvent;
@@ -21,21 +18,21 @@ import javax.swing.JLabel;
 import javax.swing.JPanel;
 import javax.swing.JScrollPane;
 
-public class FloorMenu extends JFrame implements ActionListener {
+public class ChoiceMenu extends JFrame implements ActionListener {
 	
 	JButton[] floorIcon;
 	JLabel[] floorLabel;
 	JPanel buttonPanel;
 	JScrollPane sp;
-	JButton b2;
+	JButton button;
 	private CallBack callBack;
 	
 	
-	FloorMenu(List<String> floor,CallBack callBack,JButton b2){
+	ChoiceMenu(List<String> floor,CallBack callBack,JButton button){
 		
 		super("Input Menu");
 		this.callBack = callBack;
-		this.b2 = b2;
+		this.button = button;
 		this.setSize(900,500);
 		this.setVisible(true);
 		this.setResizable(true);
@@ -84,9 +81,8 @@ public class FloorMenu extends JFrame implements ActionListener {
 	public void actionPerformed(ActionEvent e) {
 		// TODO Auto-generated method stub
 		String floorName = ((JButton)e.getSource()).getText();
-		System.out.println(floorName);
 		//invoking observer method
-		callBack.onButtonClicked(floorName,b2);
+		callBack.onButtonClicked(floorName,button);
 		this.dispose();
 		
 	}

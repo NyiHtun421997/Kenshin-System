@@ -14,6 +14,8 @@ import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.awt.event.ItemEvent;
 import java.awt.event.ItemListener;
+import java.awt.event.KeyAdapter;
+import java.awt.event.KeyEvent;
 import java.awt.image.BufferedImage;
 import java.io.File;
 import java.io.IOException;
@@ -71,10 +73,10 @@ public class InputScreen {
 
 	public static void main(String[] args) {
 		//these will be inside main menu which will call constructor of InputScreen
-		String buildingName = "BRAVI北浜";
+		String buildingName = "Sample Building C";
 		String dateLabel = "2023年11月";//must follow this ○年○月 pattern
 		//will be populated from server
-		List<String> floor = new ArrayList<String>(List.of("駐車場","1F","2F","3F"));
+		List<String> floor = new ArrayList<String>(List.of("1F","2F","3F"));
 		
 		EventQueue.invokeLater(new Runnable() {
 
@@ -98,8 +100,8 @@ class InputScreenFrame extends JFrame implements ItemListener,ActionListener,Cal
 	JButton b2,b3,b4,b5,b6,b7;
 	JLabel b1,l1,l2,photo,cboxLabel;
 	JComboBox cb;
-	JFormattedTextField tf;
-	JCheckBox cbox;
+	JFormattedTextField tf,tfOptional;
+	JCheckBox cbox,newMeterCBox;
 	CardLayout cl;
 	String buildingName;
 	String dateLabel;
@@ -125,6 +127,11 @@ class InputScreenFrame extends JFrame implements ItemListener,ActionListener,Cal
 		JMenuBar menuBar = new JMenuBar();
 		JMenu fileMenu = new JMenu("File");
 		JMenuItem saveMenu = new JMenuItem("Save");
+		fileMenu.add(saveMenu);
+		menuBar.add(fileMenu);
+		menuBar.setBackground(Color.blue);
+		
+		setJMenuBar(menuBar);
 		//Action to save all the obj inside HashMap to TempMap inside Server
 		saveMenu.addActionListener((ActionEvent ae)->{
 			
@@ -146,11 +153,6 @@ class InputScreenFrame extends JFrame implements ItemListener,ActionListener,Cal
 			
 		});
 		
-		fileMenu.add(saveMenu);
-		menuBar.add(fileMenu);
-		menuBar.setBackground(Color.blue);
-		
-		setJMenuBar(menuBar);
 		
 		//Label for buildings
 		b1 = new JLabel(buildingName);
@@ -176,15 +178,15 @@ class InputScreenFrame extends JFrame implements ItemListener,ActionListener,Cal
 		
 		//Label for 種別
 		l2 = new JLabel("種別");
-		l2.setBounds(310,130,180,50);
+		l2.setBounds(370,125,180,50);
 		l2.setFont(new Font("Ariel",Font.BOLD,18));
 		
 		//ComboBox for 系統
 		cb = new JComboBox(unitType);
-		cb.setBounds(280,160,100,50);
+		cb.setBounds(340,150,100,60);
 		cb.addActionListener(this);
 		
-		//TextField for unit input
+		//TextField for meter unit input
 		NumberFormat nf = DecimalFormat.getInstance(Locale.US);
         nf.setMaximumFractionDigits(2); // Set the maximum number of decimal places
         nf.setGroupingUsed(false);//disabling comma thousand separator
@@ -193,14 +195,20 @@ class InputScreenFrame extends JFrame implements ItemListener,ActionListener,Cal
 		tf = new JFormattedTextField(nft);
 		tf.setValue(0.0);
 		tf.setColumns(20);
-		tf.setBounds(410,130,380,80);
+		tf.setBounds(445,130,310,80);
 		tf.setHorizontalAlignment(JTextField.CENTER);
 		tf.setFont(new Font("Ariel",Font.BOLD,18));
+		tf.setBorder(BorderFactory.createLineBorder(Color.black, 2));
 		//Making sure only decimal values or numbers are entered
-		tf.addKeyListener(new java.awt.event.KeyAdapter() {
-			public void keyTyped(java.awt.event.KeyEvent evt) {
+		tf.addKeyListener(new KeyAdapter() {
+			public void keyTyped(KeyEvent evt) {
 				char c = evt.getKeyChar();
 				if(Character.isLetter(c)) evt.consume();
+				else if(c == KeyEvent.VK_ENTER) {
+					if(bottomPanel1.isVisible())
+					b5.doClick();
+					else b6.doClick();
+				}
 				else {
 					String currentText = tf.getText().replace(",", "");
 		            String newText = currentText + evt.getKeyChar();
@@ -209,14 +217,45 @@ class InputScreenFrame extends JFrame implements ItemListener,ActionListener,Cal
 					}
 					catch(	NumberFormatException e) { evt.consume();}
 }}});
+		//TextField for meter unit just before they are changed
+				
+				tfOptional = new JFormattedTextField(nft);
+				tfOptional.setValue(0.0);
+				tfOptional.setEnabled(false);
+				tfOptional.setColumns(5);
+				tfOptional.setBounds(770,130,80,80);
+				tfOptional.setHorizontalAlignment(JTextField.CENTER);
+				tfOptional.setFont(new Font("Ariel",Font.BOLD,18));
+				tfOptional.setBorder(BorderFactory.createLineBorder(Color.black, 2));
+				//Making sure only decimal values or numbers are entered
+				tfOptional.addKeyListener(new KeyAdapter() {
+					public void keyTyped(KeyEvent evt) {
+						char c = evt.getKeyChar();
+						if(Character.isLetter(c)) evt.consume();
+						
+						else {
+							String currentText = tf.getText().replace(",", "");
+				            String newText = currentText + evt.getKeyChar();
+							try{	
+								Double.parseDouble(newText);
+							}
+							catch(	NumberFormatException e) { evt.consume();}
+		}}});
+				
+		//CheckBox for whether upload image or not
+		newMeterCBox = new JCheckBox("New Meter",false);
+		newMeterCBox.setBounds(757,100,200,30);
+		newMeterCBox.addItemListener(this);
+		
+		
 		//Buttons for increment/decrement of floors
 		b3 = new JButton("UP");
-		b3.setBounds(800,130,100,40);
+		b3.setBounds(860,130,100,40);
 		b3.setBackground(Color.blue);//need fix
 		b3.addActionListener(this);
 		
 		b4 = new JButton("DOWN");
-		b4.setBounds(800,170,100,40);
+		b4.setBounds(860,170,100,40);
 		b4.setBackground(Color.blue);//need fix
 		b4.addActionListener(this);
 		
@@ -231,6 +270,8 @@ class InputScreenFrame extends JFrame implements ItemListener,ActionListener,Cal
 		topPanel.add(b4);
 		topPanel.add(cb);
 		topPanel.add(tf);
+		topPanel.add(tfOptional);
+		topPanel.add(newMeterCBox);
 		topPanel.add(l1);
 		topPanel.add(l2);
 		
@@ -241,7 +282,6 @@ class InputScreenFrame extends JFrame implements ItemListener,ActionListener,Cal
 		photo.setBounds(400,55,400,360);
 		photo.setHorizontalAlignment(SwingConstants.CENTER);
 		//Get resized image as return value by calling customized rescaleImage()method and pass it as arg to icon
-		//rescaleImage("resources/images/icon2.png",photo);
 		ImageIcon imageIcon = new ImageIcon(rescaleImage("resources/images/icon2.png",photo));
 		photo.setIcon(imageIcon);
 		
@@ -294,40 +334,59 @@ class InputScreenFrame extends JFrame implements ItemListener,ActionListener,Cal
 		cl.show(mainBottomPanel, "first");
 		
 		contentPane.add(mainBottomPanel,BorderLayout.CENTER);
-		
-		
+		this.getRootPane().setDefaultButton(b5);
 	}
 	@Override
 	public void itemStateChanged(ItemEvent ie) {
-		if(!cbox.isSelected()) {
-			cl.show(mainBottomPanel, "first");
-		}
-		if(cbox.isSelected()) { 
-			cl.show(mainBottomPanel, "second");
-		}
 		
+		if(ie.getSource() == cbox) {
+			if(!cbox.isSelected()) {
+				cl.show(mainBottomPanel, "first");
+				this.getRootPane().setDefaultButton(b5);
+			}
+			if(cbox.isSelected()) { 
+				cl.show(mainBottomPanel, "second");
+				this.getRootPane().setDefaultButton(b6);
+			}
+		}
+		if(ie.getSource() == newMeterCBox) {
+			if(!newMeterCBox.isSelected()) {
+				tfOptional.setEnabled(false);
+			}
+			if(newMeterCBox.isSelected()) {
+				tfOptional.setEnabled(true);
+			}
+		}
 	}
 	@Override
 	public void actionPerformed(ActionEvent ae) {
 
-		String buildingName = b1.getText();
 		String floorName = b2.getText();
-		String date = l1.getText();
-		String reading = tf.getText();
+		String reading = "0";
+		if(!tf.getText().isEmpty()) reading = tf.getText();
+		String readingBeforeChange = "0";
+		if(!tfOptional.getText().isEmpty()) readingBeforeChange = tfOptional.getText();
+		
 		//If floor button is pressed
 		if(ae.getSource()==b2) {
-			FloorMenu FM01 = new FloorMenu(floor,this,b2);
-			//this = an instance of input screen who is observer and will be observing it's subject,floorMenu
+			ChoiceMenu FM01 = new ChoiceMenu(floor,this,b2);
+			//this = an instance of input screen frame who implements CallBack interface and acts as observer and will be observing it's subject,choiceMenu
 			
 		}
 		//if combobox is changed,text field will be refreshed
 		if(ae.getSource()==cb) {
 			Double readingDouble = operationForAE.getReading(cb.getSelectedIndex(), floorName);
+			Double readingDoubleBeforeChange = operationForAE.getReadingBeforeChange(cb.getSelectedIndex(), floorName);
 			if(readingDouble!=null) {
 				reading = readingDouble.toString();
+				readingBeforeChange = readingDoubleBeforeChange.toString();
 				tf.setText(reading);
+				tfOptional.setText(readingBeforeChange);
 			}
-			else tf.setText("");
+			else {
+				tf.setText("");
+				tfOptional.setText("");
+			}
 		}
 		//if up button is pressed
 		if(ae.getSource()==b3) {
@@ -352,29 +411,36 @@ class InputScreenFrame extends JFrame implements ItemListener,ActionListener,Cal
 		//If Confirm button is pressed
 		if(ae.getSource()==b5 || ae.getSource()==b6) {
 			//Check current state of ComboBox
-			String checkBoxState = cb.getSelectedItem().toString();
-			if(checkBoxState != null) {
-				switch(checkBoxState) {
-				case "電灯" : operationForAE.setReadings(floorName, reading, 0);
-				cb.setSelectedItem(unitType[1]);tf.setText("");break;
-				case "動力" : operationForAE.setReadings(floorName, reading, 1);
-				cb.setSelectedItem(unitType[2]);tf.setText("");break;
-				case "水道" : operationForAE.setReadings(floorName, reading, 2);
-				cb.setSelectedItem(unitType[3]);tf.setText("");break;
-				case "ガス" : operationForAE.setReadings(floorName, reading, 3);
+			String comboBoxState = cb.getSelectedItem().toString();
+			if(comboBoxState != null) {
+				switch(comboBoxState) {
+				case "電灯" : operationForAE.setReadings(floorName, reading, readingBeforeChange, 0);
+				cb.setSelectedItem(unitType[1]);tf.setText("");tfOptional.setText("");
+				newMeterCBox.setSelected(false);
+				tf.requestFocus();
+				break;
+				case "動力" : operationForAE.setReadings(floorName, reading, readingBeforeChange, 1);
+				cb.setSelectedItem(unitType[2]);tf.setText("");tfOptional.setText("");
+				newMeterCBox.setSelected(false);
+				tf.requestFocus();
+				break;
+				case "水道" : operationForAE.setReadings(floorName, reading, readingBeforeChange, 2);
+				cb.setSelectedItem(unitType[3]);tf.setText("");tfOptional.setText("");
+				newMeterCBox.setSelected(false);
+				tf.requestFocus();
+				break;
+				case "ガス" : operationForAE.setReadings(floorName, reading, readingBeforeChange, 3);
+				
+				tfOptional.setText("");
+				newMeterCBox.setSelected(false);
 				cb.setSelectedItem(unitType[0]);
 				if(floorIndex<floor.size()-1) {
 					floorIndex++;
 					b2.setText(floor.get(floorIndex));
 					refreshPage(floor.get(floorIndex));
-				}
-				else if(floorIndex == floor.size()-1) {
-					//code for submitting objects into temp table of server
-					//code for CS01 Menu
-					
-					
-				}
-				;break;
+				};
+				tf.requestFocus();
+				break;
 				
 				}
 			
@@ -413,7 +479,7 @@ class InputScreenFrame extends JFrame implements ItemListener,ActionListener,Cal
 	@Override
 	public void onButtonClicked(String componentText,JButton b) {
 		
-		//componentText will accept the text on the button which was clicked on BM01 or FM01
+		//componentText will accept the text of the button which was clicked on FM01
 		if(b==b2) {
 			b2.setText(componentText);
 			//resetting floorIndex
@@ -431,5 +497,14 @@ class InputScreenFrame extends JFrame implements ItemListener,ActionListener,Cal
 			tf.setText(reading);
 		}
 		else tf.setText("");
+		
+		String readingBeforeChange;
+		Double readingDoubleBeforeChange = operationForAE.getReadingBeforeChange(cb.getSelectedIndex(), floorName);
+		if(readingDoubleBeforeChange!=null) {
+			readingBeforeChange = readingDoubleBeforeChange.toString();
+			tfOptional.setText(readingBeforeChange);
+		}
+		else tfOptional.setText("");
 	}
+	
 }
