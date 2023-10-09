@@ -50,7 +50,7 @@ public class MainMenu extends JFrame implements ActionListener,CallBack{
 		inputButton.setOpaque(true);
 		inputButton.setBorder(BorderFactory.createEmptyBorder(10, 10, 10, 10));
 		inputButton.setBackground(new Color(237, 244, 255));
-		ImageIcon imageIcon = new ImageIcon(rescaleImage("resources/images/input.png",inputButton));
+		ImageIcon imageIcon = new ImageIcon(rescaleImage("resources/images/input.png",inputButton.getWidth(),inputButton.getHeight()));
 		inputButton.setIcon(imageIcon);
 		inputButton.addActionListener(this);
 		
@@ -64,7 +64,7 @@ public class MainMenu extends JFrame implements ActionListener,CallBack{
 		checkButton.setOpaque(true);
 		checkButton.setBorder(BorderFactory.createEmptyBorder(10, 10, 10, 10));
 		checkButton.setBackground(new Color(237, 244, 255));
-		imageIcon = new ImageIcon(rescaleImage("resources/images/check.png",inputButton));
+		imageIcon = new ImageIcon(rescaleImage("resources/images/check.png",checkButton.getWidth(),checkButton.getHeight()));
 		checkButton.setIcon(imageIcon);
 		//checkButton.addActionListener(this);
 
@@ -83,7 +83,7 @@ public class MainMenu extends JFrame implements ActionListener,CallBack{
 		buildingButton.setOpaque(true);
 		buildingButton.setBorder(BorderFactory.createEmptyBorder(10, 10, 10, 10));
 		buildingButton.setBackground(new Color(237, 244, 255));
-		imageIcon = new ImageIcon(rescaleImage("resources/images/buildings.png",buildingButton));
+		imageIcon = new ImageIcon(rescaleImage("resources/images/buildings.png",buildingButton.getWidth(),buildingButton.getHeight()));
 		buildingButton.setIcon(imageIcon);
 		buildingButton.addActionListener(this);
 		
@@ -112,7 +112,7 @@ public class MainMenu extends JFrame implements ActionListener,CallBack{
 				if(!HttpService.checkForBuilding(buildingLabel2.getText())) {
 
 					floor = HttpService.getFloorListForBld(buildingLabel2.getText());
-					InputScreen inputScreen = new InputScreen(buildingLabel2.getText(),dateLabel,floor);
+					new InputScreen(buildingLabel2.getText(),dateLabel,floor);
 					this.dispose();
 				}
 			}
@@ -120,7 +120,7 @@ public class MainMenu extends JFrame implements ActionListener,CallBack{
 		}
 		if(ae.getSource()==buildingButton) {
 			
-			BuildingMenu BM01 = new BuildingMenu(buildingName,this,buildingButton);
+			new BuildingMenu(buildingName,this,buildingButton);
 			//this = an instance of input screen frame who implements CallBack interface and acts as observer and will be observing it's subject,buildingMenu
 		}
 		
@@ -142,11 +142,11 @@ public class MainMenu extends JFrame implements ActionListener,CallBack{
 }}});}
 			
 	//Sub-program for resizing of images
-		public Image rescaleImage(String path,Component component) {
+		public Image rescaleImage(String path,int width,int height) {
 			BufferedImage img = null;
 			try{
 				img = ImageIO.read(new File(path));
-				Image resizedImage = img.getScaledInstance(component.getWidth(), component.getHeight(), Image.SCALE_SMOOTH);
+				Image resizedImage = img.getScaledInstance(width, height, Image.SCALE_SMOOTH);
 				return resizedImage;
 			}
 			catch(IOException e) {

@@ -1,5 +1,6 @@
 package com.system.kenshin;
 
+import java.io.File;
 import java.io.IOException;
 import java.io.UnsupportedEncodingException;
 import java.net.URI;
@@ -7,9 +8,26 @@ import java.net.URLEncoder;
 import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
+import java.nio.file.FileVisitResult;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
+import java.nio.file.SimpleFileVisitor;
+import java.nio.file.attribute.BasicFileAttributes;
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
+
+import org.apache.http.HttpEntity;
+import org.apache.http.client.ClientProtocolException;
+import org.apache.http.client.methods.CloseableHttpResponse;
+import org.apache.http.client.methods.HttpPost;
+import org.apache.http.entity.ContentType;
+import org.apache.http.entity.mime.MultipartEntityBuilder;
+import org.apache.http.entity.mime.content.FileBody;
+import org.apache.http.impl.client.CloseableHttpClient;
+import org.apache.http.impl.client.HttpClients;
+import org.apache.http.util.EntityUtils;
 
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -32,10 +50,8 @@ public class HttpService {
 		}
 		catch(IOException  | InterruptedException e) {
 			e.printStackTrace();
-			return null;
-			//will throw error message
+			throw new CustomException(e);
 		}
-		
 	}
 private static HttpResponse<String> postMethod(String uri,Object object) {
 		
@@ -58,10 +74,8 @@ private static HttpResponse<String> postMethod(String uri,Object object) {
 		}
 		catch(IOException  | InterruptedException e) {
 			e.printStackTrace();
-			return null;
-			//will throw error message
-		}
-		
+			throw new CustomException(e);
+		}		
 	}
 	
 	public static List<String> getBuildings() {
@@ -79,14 +93,14 @@ private static HttpResponse<String> postMethod(String uri,Object object) {
 				return buildingName;
 			}
 			else {
-				return null;
-				//will throw error message
+				String message = response.body();
+				throw new CustomException(message);
 			}
 			
 		}
 		catch(IOException e) {
 			e.printStackTrace();
-			return null;
+			throw new CustomException(e);
 			//will throw error message
 		}
 	}
@@ -104,19 +118,14 @@ public static String getLatestDate(String buildingName) {
 				latestDate = response.body().replace('-', '年')+"月";
 				return latestDate;
 			}
-			else {
-				return null;
-				//will throw error message
+			else{
+				String message = response.body();
+				throw new CustomException(message);
 			}
-		}
-		catch(UnsupportedEncodingException e) {
-			e.printStackTrace();
-			return null;
 		}
 		catch(IOException e) {
 			e.printStackTrace();
-			return null;
-			//will throw error message
+			throw new CustomException(e);
 		}
 	}
 	
@@ -134,18 +143,14 @@ public static List<String> getFloorListForBld(String buildingName){
 			floor = objectMapper.readValue(response.body(), new TypeReference<List<String>>() {});
 			return floor;
 		}
-		else {
-			//throw error message;
-			return null;
+		else{
+			String message = response.body();
+			throw new CustomException(message);
 		}
-	}
-	catch(UnsupportedEncodingException e) {
-		e.printStackTrace();
-		return null;
 	}
 	catch(IOException e) {
 		e.printStackTrace();
-		return null;
+		throw new CustomException(e);
 	}
 }
 
@@ -163,18 +168,14 @@ public static List<String> getTenantListForBld(String buildingName){
 			tenants = objectMapper.readValue(response.body(), new TypeReference<List<String>>() {});
 			return tenants;
 		}
-		else {
-			//throw error message;
-			return null;
+		else{
+			String message = response.body();
+			throw new CustomException(message);
 		}
-	}
-	catch(UnsupportedEncodingException e) {
-		e.printStackTrace();
-		return null;
 	}
 	catch(IOException e) {
 		e.printStackTrace();
-		return null;
+		throw new CustomException(e);
 	}
 }
 public static void storeToTempMap(LinkedHashMap<String,FloorReading> floorReadingsMap) {
@@ -205,21 +206,17 @@ public static LinkedHashMap<String,FloorReading> getTenantReadings(String buildi
 			
 			return tenant_readings;
 		}
-		else return null;
-	}
-	
-	catch(UnsupportedEncodingException e) {
-		e.printStackTrace();
-		return null;
+		else{
+			String message = response.body();
+			throw new CustomException(message);
+		}
 	}
 	catch(IOException e) {
 		e.printStackTrace();
-		return null;
+		throw new CustomException(e);
 	}
 
 }
-
-
 //getting tenant readings temporarily stored on server
 public static LinkedHashMap<String,FloorReading> getTenantReadingsFromTempo(String buildingName) {
 	
@@ -237,20 +234,16 @@ public static LinkedHashMap<String,FloorReading> getTenantReadingsFromTempo(Stri
 			
 			return tenant_readings;
 		}
-		else return null;
-	}
-	
-	catch(UnsupportedEncodingException e) {
-		e.printStackTrace();
-		return null;
+		else{
+			String message = response.body();
+			throw new CustomException(message);
+		}
 	}
 	catch(IOException e) {
 		e.printStackTrace();
-		return null;
+		throw new CustomException(e);
 	}
-
 }
-
 //before opening input screen,check whether that buliding's data is being made
 public static Boolean checkForBuilding(String buildingName) {
 	
@@ -261,15 +254,14 @@ public static Boolean checkForBuilding(String buildingName) {
 		if(response.statusCode() == 200) {
 			return Boolean.parseBoolean(response.body());
 		}
-		else return null;
-	}
-	catch(UnsupportedEncodingException e) {
-		e.printStackTrace();
-		return null;
+		else {
+			String message = response.body();
+			throw new CustomException(message);
+		}
 	}
 	catch(IOException e) {
 		e.printStackTrace();
-		return null;
+		throw new CustomException(e);
 	}
 }
 
@@ -281,10 +273,45 @@ public static void storeComments(LinkedHashMap<String,String> commentData, Strin
 			//loop through each reading obj inside HashMap and call post method
 			postMethod("http://localhost:8080/api/kenshin/central/temporary/save_comments?building_name="+encodedBuildingName,commentData);			
 	}
-	catch(UnsupportedEncodingException e) {
+	catch(IOException e) {
 		e.printStackTrace();
+		throw new CustomException(e);
 		
 	}
+}
+//method to iterate through app's image file and send each image file to server
+public static void storeImages() throws IOException,CustomException{
+	String rootFolder = "/Users/nyinyihtun/git/repository/KenshinSystem/resources/user_input";
+    String searchFor = "jpg";
+    SimpleFileVisitor<Path> myFileVisitor = new SimpleFileVisitor<>() {
+    	@Override
+    	public FileVisitResult visitFile(Path path, BasicFileAttributes attrs) throws IOException{
+    		if(path.toString().contains(searchFor)) {
+    			CloseableHttpClient client = HttpClients.createDefault();
+    			try {
+    				MultipartEntityBuilder builder = MultipartEntityBuilder.create();
+    				File file = path.toFile();
+    				String encodedFileName = URLEncoder.encode(file.getName(),"UTF-8");
+    				builder.addPart("image",new FileBody(file,ContentType.IMAGE_JPEG,encodedFileName));
+    				HttpEntity entity = builder.build();
+    				HttpPost request = new HttpPost("http://localhost:8080/api/kenshin/central/images/upload");
+    				request.setEntity(entity);
+    				
+    				CloseableHttpResponse response = client.execute(request);
+    				if(response.getStatusLine().getStatusCode() == 400) {
+    					String message = EntityUtils.toString(response.getEntity());
+    					throw new CustomException(message);
+    				}
+    				response.close();
+    			}
+    			finally {
+    				client.close();
+    			}
+    		}
+    		return FileVisitResult.CONTINUE;
+    	}
+    };
+    Files.walkFileTree(Paths.get(rootFolder), myFileVisitor);
 }
 	
 

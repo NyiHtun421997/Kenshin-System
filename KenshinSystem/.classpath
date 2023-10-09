@@ -10,5 +10,9 @@
 	<classpathentry kind="lib" path="/Users/nyinyihtun/git/repository/KenshinSystem/lib/jackson-core-2.15.2.jar"/>
 	<classpathentry kind="lib" path="/Users/nyinyihtun/git/repository/KenshinSystem/lib/jackson-databind-2.15.2.jar"/>
 	<classpathentry kind="lib" path="/Users/nyinyihtun/git/repository/KenshinSystem/lib/jackson-datatype-jsr310-2.15.2.jar"/>
+	<classpathentry kind="lib" path="/Users/nyinyihtun/git/repository/KenshinSystem/lib/commons-logging-1.2.jar"/>
+	<classpathentry kind="lib" path="/Users/nyinyihtun/git/repository/KenshinSystem/lib/httpclient-4.5.13.jar"/>
+	<classpathentry kind="lib" path="/Users/nyinyihtun/git/repository/KenshinSystem/lib/httpcore-4.4.16.jar"/>
+	<classpathentry kind="lib" path="/Users/nyinyihtun/git/repository/KenshinSystem/lib/httpmime-4.5.13.jar"/>
 	<classpathentry kind="output" path="bin"/>
 </classpath>
