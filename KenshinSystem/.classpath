@@ -14,5 +14,8 @@
 	<classpathentry kind="lib" path="/Users/nyinyihtun/git/repository/KenshinSystem/lib/httpclient-4.5.13.jar"/>
 	<classpathentry kind="lib" path="/Users/nyinyihtun/git/repository/KenshinSystem/lib/httpcore-4.4.16.jar"/>
 	<classpathentry kind="lib" path="/Users/nyinyihtun/git/repository/KenshinSystem/lib/httpmime-4.5.13.jar"/>
+	<classpathentry kind="lib" path="/Users/nyinyihtun/git/repository/KenshinSystem/lib/ehcache-3.10.8.jar"/>
+	<classpathentry kind="lib" path="/Users/nyinyihtun/git/repository/KenshinSystem/lib/slf4j-api-2.0.9.jar"/>
+	<classpathentry kind="lib" path="/Users/nyinyihtun/git/repository/KenshinSystem/lib/log4j-core-2.20.0.jar"/>
 	<classpathentry kind="output" path="bin"/>
 </classpath>

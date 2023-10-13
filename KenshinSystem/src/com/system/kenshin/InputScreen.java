@@ -25,6 +25,7 @@ import java.io.FileOutputStream;
 import java.io.IOException;
 import java.text.DecimalFormat;
 import java.text.NumberFormat;
+import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Locale;
@@ -50,22 +51,14 @@ import javax.swing.text.NumberFormatter;
 
 public class InputScreen {
 	
-	String buildingName;
-	String dateLabel;
-	List<String> floor;
-	
-	public InputScreen(String buildingName, String dateLabel, List<String> floor) {
-		
-	  this.buildingName = buildingName;
-	  this.dateLabel = dateLabel;
-	  this.floor = floor;
+	public InputScreen(String buildingName, LocalDate readingDate, List<String> floor) {
 	  
 		EventQueue.invokeLater(new Runnable() {
 			@Override
 			public void run() {
 			try {
 				ReadingOperation operationForAE = new Operation();	
-				InputScreenFrame f = new InputScreenFrame(operationForAE,buildingName,dateLabel,floor);
+				InputScreenFrame f = new InputScreenFrame(operationForAE,buildingName,readingDate,floor);
 				f.setSize(1200,800);
 				f.setVisible(true);
 				f.setResizable(false);
@@ -79,7 +72,7 @@ public class InputScreen {
 	public static void main(String[] args) {
 		//these will be inside main menu which will call constructor of InputScreen
 		String buildingName = "Sample Building C";
-		String dateLabel = "2023年11月";//must follow this ○年○月 pattern
+		LocalDate readingDate = LocalDate.of(2023, 11, 1);//must follow this ○年○月 pattern
 		//will be populated from server
 		List<String> floor = new ArrayList<String>(List.of("1F","2F","3F"));
 		
@@ -89,7 +82,7 @@ public class InputScreen {
 			public void run() {
 			try {
 				ReadingOperation operationForAE = new Operation();	
-				InputScreenFrame f = new InputScreenFrame(operationForAE,buildingName,dateLabel,floor);
+				InputScreenFrame f = new InputScreenFrame(operationForAE,buildingName,readingDate,floor);
 				f.setSize(1200,800);
 				f.setVisible(true);
 				f.setResizable(false);
@@ -109,7 +102,7 @@ class InputScreenFrame extends JFrame implements ItemListener,ActionListener,Cal
 	JCheckBox cbox,newMeterCBox;
 	CardLayout cl;
 	private String buildingName;
-	private String dateLabel;
+	private LocalDate readingDate;
 	private List<String> floor;
 	
 	private String unitType [] = {"電灯","動力","水道","ガス"};
@@ -117,17 +110,17 @@ class InputScreenFrame extends JFrame implements ItemListener,ActionListener,Cal
 	
 	private static int floorIndex = 0;
 	
-	InputScreenFrame(ReadingOperation operationForAE,String buildingName, String dateLabel, List<String> floor){
+	InputScreenFrame(ReadingOperation operationForAE,String buildingName, LocalDate readingDate, List<String> floor){
 		super("Input Menu");
 		Container contentPane = this.getContentPane();
 		contentPane.setLayout(new BorderLayout());
 		  
 		this.operationForAE = operationForAE;
 		this.buildingName = buildingName;
-		this.dateLabel = dateLabel;
+		this.readingDate = readingDate;
 		this.floor = floor;
 		//once the input menu is opened,operation will be constructed
-		operationForAE.startOperation(buildingName, dateLabel, floor);
+		operationForAE.startOperation(buildingName, readingDate, floor);
 		
 		JMenuBar menuBar = new JMenuBar();
 		JMenu fileMenu = new JMenu("File");
@@ -163,7 +156,7 @@ class InputScreenFrame extends JFrame implements ItemListener,ActionListener,Cal
 	        		new CustomException(e.getMessage());
 	        	}
 	        	//after saving close this window and jump to CS01
-				new CompareScreen(buildingName,dateLabel);
+				new CompareScreen(buildingName,readingDate);
 				this.dispose();
 	        }
 	        else {}
@@ -189,7 +182,7 @@ class InputScreenFrame extends JFrame implements ItemListener,ActionListener,Cal
 		b2.addActionListener(this);
 		
 		//Label for date
-		l1 = new JLabel(dateLabel);
+		l1 = new JLabel(dateConverter(readingDate));
 		l1.setFont(new Font("Ariel",Font.BOLD,18));
 		l1.setBounds(700,5,200,40);
 		
@@ -388,7 +381,7 @@ class InputScreenFrame extends JFrame implements ItemListener,ActionListener,Cal
 		
 		//If floor button is pressed
 		if(ae.getSource()==b2) {
-			ChoiceMenu FM01 = new ChoiceMenu(floor,this,b2);
+			new ChoiceMenu(floor,this,b2);
 			//this = an instance of input screen frame who implements CallBack interface and acts as observer and will be observing it's subject,choiceMenu
 			
 		}
@@ -476,7 +469,7 @@ class InputScreenFrame extends JFrame implements ItemListener,ActionListener,Cal
 			
 			}
 		}
-	
+	//if upload button is pressed
 		if(ae.getSource() == b7) {
 			JFileChooser fileChooser = new JFileChooser();
 			int option = fileChooser.showOpenDialog(null);
@@ -503,6 +496,13 @@ class InputScreenFrame extends JFrame implements ItemListener,ActionListener,Cal
 			return null;
 		}
 	}
+	//Sub-program for converting LocalDate to String
+			public String dateConverter(LocalDate readingDate) {
+				if(readingDate == null) {
+					return "";
+				}
+				return String.format("%4d年%1d月", readingDate.getYear(), readingDate.getMonthValue());
+			}
 	//Method to display image selected from file chooser
 	public void displayImage(String path) {
 		
@@ -539,9 +539,8 @@ class InputScreenFrame extends JFrame implements ItemListener,ActionListener,Cal
 	
 	//ImageFileNameBuilder
 	public String imageFileNameBuilder() {
-		int thisMonth = Integer.valueOf(dateLabel.substring(dateLabel.indexOf("年")+1,dateLabel.indexOf("月")));
-		int thisYear = Integer.valueOf(dateLabel.substring(0,dateLabel.indexOf("年")));
-		String currMonth = String.format("%4d-%02d-01",thisYear,thisMonth);
+
+		String currMonth = String.format("%4d-%02d-01",readingDate.getYear(),readingDate.getMonthValue());
 		String readingType = (String) cb.getSelectedItem();
 		//File will be named in bldName_readingdate_floorname_readingtype
 		return  buildingName+"_"+currMonth+"_"+floor.get(floorIndex)+"_"+readingType+".jpg";

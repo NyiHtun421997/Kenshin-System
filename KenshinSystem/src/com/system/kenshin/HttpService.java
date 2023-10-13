@@ -14,14 +14,19 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.nio.file.SimpleFileVisitor;
 import java.nio.file.attribute.BasicFileAttributes;
+import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
 
 import org.apache.http.HttpEntity;
+import org.apache.http.HttpEntityEnclosingRequest;
 import org.apache.http.client.ClientProtocolException;
 import org.apache.http.client.methods.CloseableHttpResponse;
+import org.apache.http.client.methods.HttpGet;
 import org.apache.http.client.methods.HttpPost;
+import org.apache.http.client.methods.HttpPut;
+import org.apache.http.client.methods.HttpRequestBase;
 import org.apache.http.entity.ContentType;
 import org.apache.http.entity.mime.MultipartEntityBuilder;
 import org.apache.http.entity.mime.content.FileBody;
@@ -77,6 +82,30 @@ private static HttpResponse<String> postMethod(String uri,Object object) {
 			throw new CustomException(e);
 		}		
 	}
+private static HttpResponse<String> putMethod(String uri,Object object) {
+	
+	HttpClient client = HttpClient.newHttpClient();
+	HttpResponse<String> response;
+	try {
+		ObjectMapper objectMapper = JsonMapper.builder()
+			    .addModule(new JavaTimeModule())
+			    .build();
+		String json = objectMapper.writeValueAsString(object);
+		//Testing
+		System.out.println(json);
+		HttpRequest request = HttpRequest.newBuilder()
+								.header("Content-Type", "application/json")
+								.uri(URI.create(uri))
+								.PUT(HttpRequest.BodyPublishers.ofString(json))
+								.build();
+		response = client.send(request, HttpResponse.BodyHandlers.ofString());
+		return response;
+	}
+	catch(IOException  | InterruptedException e) {
+		e.printStackTrace();
+		throw new CustomException(e);
+	}		
+}
 	
 	public static List<String> getBuildings() {
 		
@@ -105,18 +134,18 @@ private static HttpResponse<String> postMethod(String uri,Object object) {
 		}
 	}
 	
-public static String getLatestDate(String buildingName) {
+public static LocalDate getLatestDate(String buildingName) {
 		
-		String latestDate;
 		try {
             String encodedBuildingName = URLEncoder.encode(buildingName, "UTF-8");
 			HttpResponse<String> response = getMethod("http://localhost:8080/api/kenshin/central/latest_date?building_name="+encodedBuildingName);
-			
+					
 			if(response.statusCode() == 200) {
 				
-				//converting yyyy-mm to yyyy年mm月
-				latestDate = response.body().replace('-', '年')+"月";
-				return latestDate;
+				ObjectMapper objectMapper = JsonMapper.builder()
+					    .addModule(new JavaTimeModule())
+					    .build();
+				return objectMapper.readValue(response.body(), new TypeReference<LocalDate>() {});
 			}
 			else{
 				String message = response.body();
@@ -128,6 +157,28 @@ public static String getLatestDate(String buildingName) {
 			throw new CustomException(e);
 		}
 	}
+
+public static List<String> getReadingDatesForBuilding(String buildingName){
+	try {
+		String encodedBuildingName = URLEncoder.encode(buildingName,"UTF-8");
+		HttpResponse<String> response = getMethod("http://localhost:8080/api/kenshin/central/reading_dates?building_name="+encodedBuildingName);
+		if(response.statusCode() == 200) {
+			ObjectMapper objectMapper = JsonMapper.builder()
+										.addModule(new JavaTimeModule())
+										.build();
+			List<String> readingDateList = objectMapper.readValue(response.body(), new TypeReference<List<String>>() {});
+			return readingDateList;
+		}
+		else {
+			String message = response.body();
+			throw new CustomException(message);
+		}
+	}
+	catch(IOException e) {
+		e.printStackTrace();
+		throw new CustomException(e);
+	}
+}
 	
 public static List<String> getFloorListForBld(String buildingName){
 	
@@ -182,9 +233,44 @@ public static void storeToTempMap(LinkedHashMap<String,FloorReading> floorReadin
 	
 	for(String x: floorReadingsMap.keySet()) {
 		//loop through each reading obj inside HashMap and call post method for each obj
-		postMethod("http://localhost:8080/api/kenshin/central/temporary/save_readings",floorReadingsMap.get(x));
+		postMethod("http://localhost:8080/api/kenshin/central/temporary/save_readings",floorReadingsMap.get(x));	
+	}
+}
+//method to update readings from DB
+public static void updateReadings(String buildingName,String dateLabel,String floorName,LinkedHashMap<String,FloorReading> floorReadingsMap) {
+	for(String x: floorReadingsMap.keySet()) {
+		
+		try {
+			String encodedBuildingName = URLEncoder.encode(buildingName,"UTF-8");
+			String encodedDateLabel = URLEncoder.encode(dateLabel,"UTF-8");
+			String encodedFloorName = URLEncoder.encode(x,"UTF-8");
+			//loop through each reading obj inside HashMap and call post method for each obj
+			putMethod("http://localhost:8080/api/kenshin/central/floor/update_readings?building_name="+encodedBuildingName
+					+"&reading_date="+encodedDateLabel+"&floor_name="+encodedFloorName,floorReadingsMap.get(x));	
+		}
+		catch(IOException e) {
+			e.printStackTrace();
+			throw new CustomException(e);
+		}
 		
 	}
+}
+//getting readings from DB
+public static LinkedHashMap<String,FloorReading> getReadingsFromDB(String url) throws IOException{
+	
+		HttpResponse<String> response = getMethod(url);
+		if(response.statusCode() == 200) {
+			
+			ObjectMapper objectMapper = JsonMapper.builder()
+				    .addModule(new JavaTimeModule())
+				    .build();
+			return objectMapper.readValue(response.body(), new TypeReference<LinkedHashMap<String,FloorReading>>() {});
+		}
+		else{
+			String message = response.body();
+			throw new CustomException(message);
+		}
+
 }
 
 //getting tenant readings from DB
@@ -192,24 +278,27 @@ public static LinkedHashMap<String,FloorReading> getTenantReadings(String buildi
 	
 	try {
 		String encodedBuildingName = URLEncoder.encode(buildingName,"UTF-8");
-		
 		String encodedReadingDate = URLEncoder.encode(dateLabel,"UTF-8");
-		
-		HttpResponse<String> response = getMethod("http://localhost:8080/api/kenshin/central/past_readings?building_name="+encodedBuildingName+"&reading_date="+encodedReadingDate);
-		
-		if(response.statusCode() == 200) {
+		String url = "http://localhost:8080/api/kenshin/central/tenant/past_readings?building_name="+encodedBuildingName+"&reading_date="+encodedReadingDate;
 			
-			ObjectMapper objectMapper = JsonMapper.builder()
-				    .addModule(new JavaTimeModule())
-				    .build();
-			LinkedHashMap<String,FloorReading> tenant_readings = objectMapper.readValue(response.body(), new TypeReference<LinkedHashMap<String,FloorReading>>() {});
+		LinkedHashMap<String,FloorReading> tenant_readings = getReadingsFromDB(url);
+		return tenant_readings;
+	}
+	catch(IOException e) {
+		e.printStackTrace();
+		throw new CustomException(e);
+	}
+}
+//getting floor readings from DB
+public static LinkedHashMap<String,FloorReading> getFloorReadings(String buildingName, String dateLabel) {
+	
+	try {
+		String encodedBuildingName = URLEncoder.encode(buildingName,"UTF-8");
+		String encodedReadingDate = URLEncoder.encode(dateLabel,"UTF-8");
+		String url = "http://localhost:8080/api/kenshin/central/floor/past_readings?building_name="+encodedBuildingName+"&reading_date="+encodedReadingDate;
 			
-			return tenant_readings;
-		}
-		else{
-			String message = response.body();
-			throw new CustomException(message);
-		}
+		LinkedHashMap<String,FloorReading> floor_readings = getReadingsFromDB(url);
+		return floor_readings;
 	}
 	catch(IOException e) {
 		e.printStackTrace();
@@ -217,27 +306,46 @@ public static LinkedHashMap<String,FloorReading> getTenantReadings(String buildi
 	}
 
 }
-//getting tenant readings temporarily stored on server
-public static LinkedHashMap<String,FloorReading> getTenantReadingsFromTempo(String buildingName) {
-	
-	try {
-		String encodedBuildingName = URLEncoder.encode(buildingName,"UTF-8");
-		
-		HttpResponse<String> response = getMethod("http://localhost:8080/api/kenshin/central/temporary/get_readings?building_name="+encodedBuildingName);
-		
-		if(response.statusCode() == 200) {
-			
+//getting readings temporarily stored on server
+public static LinkedHashMap<String,FloorReading> getReadingsFromTempo(String url) throws IOException{
+
+		HttpResponse<String> response = getMethod(url);	
+		if(response.statusCode() == 200) {	
 			ObjectMapper objectMapper = JsonMapper.builder()
 				    .addModule(new JavaTimeModule())
 				    .build();
-			LinkedHashMap<String,FloorReading> tenant_readings = objectMapper.readValue(response.body(), new TypeReference<LinkedHashMap<String,FloorReading>>() {});
-			
-			return tenant_readings;
+			LinkedHashMap<String,FloorReading> readings = objectMapper.readValue(response.body(), new TypeReference<LinkedHashMap<String,FloorReading>>() {});	
+			return readings;
 		}
 		else{
 			String message = response.body();
 			throw new CustomException(message);
 		}
+}
+//getting tenant readings temporarily stored on server
+public static LinkedHashMap<String,FloorReading> getTenantReadingsFromTempo(String buildingName) {
+	
+	try {
+		String encodedBuildingName = URLEncoder.encode(buildingName,"UTF-8");
+		String url = "http://localhost:8080/api/kenshin/central/temporary/tenant/get_readings?building_name="+encodedBuildingName;
+		
+		LinkedHashMap<String,FloorReading> tenant_readings = getReadingsFromTempo(url);
+		return tenant_readings;
+	}
+	catch(IOException e) {
+		e.printStackTrace();
+		throw new CustomException(e);
+	}
+}
+//getting floor readings temporarily stored on server
+public static LinkedHashMap<String,FloorReading> getFloorReadingsFromTempo(String buildingName) {
+	
+	try {
+		String encodedBuildingName = URLEncoder.encode(buildingName,"UTF-8");
+		String url = "http://localhost:8080/api/kenshin/central/temporary/floor/get_readings?building_name="+encodedBuildingName;
+		
+		LinkedHashMap<String,FloorReading> floor_readings = getReadingsFromTempo(url);
+		return floor_readings;
 	}
 	catch(IOException e) {
 		e.printStackTrace();
@@ -265,7 +373,7 @@ public static Boolean checkForBuilding(String buildingName) {
 	}
 }
 
-//method for saving comments for readings of each tenant
+//method for updating comments for readings of each tenant
 public static void storeComments(LinkedHashMap<String,String> commentData, String buildingName) {
 	
 	try {
@@ -280,7 +388,7 @@ public static void storeComments(LinkedHashMap<String,String> commentData, Strin
 	}
 }
 //method to iterate through app's image file and send each image file to server
-public static void storeImages() throws IOException,CustomException{
+public static void visitFilesAndUpload(HttpRequestBase request) throws IOException,CustomException{
 	String rootFolder = "/Users/nyinyihtun/git/repository/KenshinSystem/resources/user_input";
     String searchFor = "jpg";
     SimpleFileVisitor<Path> myFileVisitor = new SimpleFileVisitor<>() {
@@ -294,8 +402,13 @@ public static void storeImages() throws IOException,CustomException{
     				String encodedFileName = URLEncoder.encode(file.getName(),"UTF-8");
     				builder.addPart("image",new FileBody(file,ContentType.IMAGE_JPEG,encodedFileName));
     				HttpEntity entity = builder.build();
-    				HttpPost request = new HttpPost("http://localhost:8080/api/kenshin/central/images/upload");
-    				request.setEntity(entity);
+    				
+    				if(request instanceof HttpPost) {
+    					((HttpPost)request).setEntity(entity);
+    				}
+    				if(request instanceof HttpPut) {
+    					((HttpPut)request).setEntity(entity);
+    				}
     				
     				CloseableHttpResponse response = client.execute(request);
     				if(response.getStatusLine().getStatusCode() == 400) {
@@ -306,6 +419,7 @@ public static void storeImages() throws IOException,CustomException{
     			}
     			finally {
     				client.close();
+    				Files.delete(path);
     			}
     		}
     		return FileVisitResult.CONTINUE;
@@ -313,6 +427,36 @@ public static void storeImages() throws IOException,CustomException{
     };
     Files.walkFileTree(Paths.get(rootFolder), myFileVisitor);
 }
-	
 
+public static void storeImages() throws IOException,CustomException{
+	HttpPost request = new HttpPost("http://localhost:8080/api/kenshin/central/images/upload");
+	visitFilesAndUpload(request);
+}
+
+public static void updateImages() throws IOException,CustomException{
+	HttpPut request = new HttpPut("http://localhost:8080/api/kenshin/central/images/upload");
+	visitFilesAndUpload(request);
+}
+
+public static byte[] getImages(String fileName) throws IOException,CustomException{
+	String encodedFileName = URLEncoder.encode(fileName,"UTF-8");
+	HttpGet request = new HttpGet("http://localhost:8080/api/kenshin/central/images/download?file_name="+encodedFileName);
+	CloseableHttpClient client = HttpClients.createDefault();
+	CloseableHttpResponse response = client.execute(request);
+		try {
+			if(response.getStatusLine().getStatusCode() == 200) {
+				HttpEntity entity = response.getEntity();
+				byte[] bytes = EntityUtils.toByteArray(entity);
+				System.out.println(bytes);
+				return  bytes;
+			}
+			else {
+				return null;
+			}
+		}
+		finally {
+			response.close();
+			client.close();
+		}
+	}
 }

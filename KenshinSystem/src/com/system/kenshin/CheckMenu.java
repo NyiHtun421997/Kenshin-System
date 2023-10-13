@@ -1,12 +1,10 @@
 package com.system.kenshin;
 
 import java.awt.BorderLayout;
-import java.awt.CardLayout;
 import java.awt.Color;
 import java.awt.Container;
 import java.awt.Dimension;
 import java.awt.EventQueue;
-import java.awt.FlowLayout;
 import java.awt.Font;
 import java.awt.Image;
 import java.awt.event.ActionEvent;
@@ -15,15 +13,19 @@ import java.awt.event.ItemEvent;
 import java.awt.event.ItemListener;
 import java.awt.event.KeyAdapter;
 import java.awt.event.KeyEvent;
+import java.awt.event.WindowAdapter;
+import java.awt.event.WindowEvent;
 import java.awt.image.BufferedImage;
 import java.io.BufferedInputStream;
 import java.io.BufferedOutputStream;
+import java.io.ByteArrayInputStream;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.text.DecimalFormat;
 import java.text.NumberFormat;
+import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Locale;
@@ -43,19 +45,17 @@ import javax.swing.JMenuBar;
 import javax.swing.JMenuItem;
 import javax.swing.JOptionPane;
 import javax.swing.JPanel;
+import javax.swing.JScrollPane;
+import javax.swing.JTextArea;
 import javax.swing.JTextField;
 import javax.swing.SwingConstants;
 import javax.swing.text.NumberFormatter;
 
 public class CheckMenu {
 	
-	String buildingName;
-	String dateLabel;
-	List<String> floor;
-	
 	public static void main(String[] args) {
 		String buildingName = "Sample Building C";
-		String dateLabel = "2023年11月";//must follow this ○年○月 pattern
+		LocalDate readingDate = LocalDate.of(2023, 11, 1);//must follow this ○年○月 pattern
 		//will be populated from server
 		List<String> floor = new ArrayList<String>(List.of("1F","2F","3F"));
 		
@@ -63,8 +63,9 @@ public class CheckMenu {
 			@Override
 			public void run() {
 				try {
-					ReadingOperation operationForAE = new Operation();	
-					CheckMenuFrame f = new CheckMenuFrame(operationForAE,buildingName,dateLabel,floor);
+					ReadingOperation operationForAE = new Operation();
+					operationForAE.startOperation(buildingName, readingDate, floor);
+					CheckMenuFrame f = new CheckMenuFrame(operationForAE,buildingName,readingDate,floor);
 					f.setSize(1200,800);
 					f.setVisible(true);
 					f.setResizable(false);
@@ -75,19 +76,13 @@ public class CheckMenu {
 }}});}
 
 	
-	public CheckMenu(String buildingName, String dateLabel, List<String> floor) {
-		
-		this.buildingName = buildingName;
-		this.dateLabel = dateLabel;
-		this.floor = floor;
+	public CheckMenu(ReadingOperation operationForAE, String buildingName, LocalDate readingDate, List<String> floor) {
 		
 		EventQueue.invokeLater(new Runnable() {
-			
 			@Override
 			public void run() {
 				try {
-					ReadingOperation operationForAE = new Operation();	
-					CheckMenuFrame f = new CheckMenuFrame(operationForAE,buildingName,dateLabel,floor);
+					CheckMenuFrame f = new CheckMenuFrame(operationForAE,buildingName,readingDate,floor);
 					f.setSize(1200,800);
 					f.setVisible(true);
 					f.setResizable(false);
@@ -100,14 +95,16 @@ public class CheckMenu {
 	class CheckMenuFrame extends JFrame implements ItemListener,ActionListener,CallBack{
 		
 		JPanel topPanel,bottomPanel;
-		JButton b2,b3,b4,b5;
-		JLabel b1,l1,l2,photo,cboxLabel;
+		JButton b2,b3,b4,b5,photo;
+		JLabel b1,l1,l2,cboxLabel,commentLabel;
 		JComboBox cb;
 		JFormattedTextField tf,tfOptional;
 		JCheckBox newMeterCBox;
+		JTextArea commentBox;
 		
+		private ImageCache imageCache;
 		private String buildingName;
-		private String dateLabel;
+		private LocalDate readingDate;
 		private List<String> floor;
 		
 		private String unitType [] = {"電灯","動力","水道","ガス"};
@@ -115,17 +112,16 @@ public class CheckMenu {
 		
 		private static int floorIndex = 0;
 		
-		CheckMenuFrame(ReadingOperation operationForAE,String buildingName, String dateLabel, List<String> floor){
+		CheckMenuFrame(ReadingOperation operationForAE,String buildingName, LocalDate readingDate, List<String> floor){
 			super("Check Menu");
 			Container contentPane = this.getContentPane();
 			contentPane.setLayout(new BorderLayout());
 			  
 			this.operationForAE = operationForAE;
 			this.buildingName = buildingName;
-			this.dateLabel = dateLabel;
+			this.readingDate = readingDate;
 			this.floor = floor;
-			//once the check menu is opened,operation will be constructed
-			operationForAE.startOperation(buildingName, dateLabel, floor);
+			imageCache = new ImageCache();
 			
 			JMenuBar menuBar = new JMenuBar();
 			JMenu fileMenu = new JMenu("File");
@@ -135,11 +131,17 @@ public class CheckMenu {
 			menuBar.setBackground(Color.blue);
 			
 			setJMenuBar(menuBar);
-			//Action to save all the obj inside HashMap to TempMap inside Server
+			
 			saveMenu.addActionListener((ActionEvent ae)->{
+			
+				//call storeToTempMap method for lastetMonth
+				if(operationForAE.isLatestMonth())
+					HttpService.storeToTempMap(operationForAE.getAllReadings());
 				
-				HttpService.storeToTempMap(operationForAE.getAllReadings());
-				
+				//call HttpService method to update DB for non-latestMonths
+				else {
+					HttpService.updateReadings(buildingName,String.format("%4d-%02d-01", readingDate.getYear(), readingDate.getMonthValue()) , floor.get(floorIndex), operationForAE.getAllReadings());
+				}			
 				//Creating a confirmation dialog box before moving to CS01
 				ImageIcon decorativeIcon = new ImageIcon("resources/images/ask.png");
 				Image decorativeImage = decorativeIcon.getImage();
@@ -150,7 +152,8 @@ public class CheckMenu {
 		        if(choice == JOptionPane.YES_OPTION) {
 		        	//will save all the image files inside app's directory to server and delete them
 		        	try{
-		        		HttpService.storeImages();
+		        		//calls HttpService method to update images
+		        		HttpService.updateImages();
 		        	}
 		        	catch(IOException e) {
 		        		e.printStackTrace();
@@ -161,7 +164,7 @@ public class CheckMenu {
 		        		new CustomException(e.getMessage());
 		        	}
 		        	//after saving close this window and jump to CS01
-					new CompareScreen(buildingName,dateLabel);
+					new CompareScreen(buildingName,readingDate);
 					this.dispose();
 		        }
 		        else {}
@@ -176,6 +179,7 @@ public class CheckMenu {
 			//Button for Floors
 			b2 = new JButton(floor.get(floorIndex));
 			b2.setBounds(540,45,120,80);
+			b2.setOpaque(true);
 			b2.setHorizontalAlignment(SwingConstants.CENTER);
 			b2.setBorder(BorderFactory.createEmptyBorder(10, 10, 10, 10));
 			b2.setBackground(new Color(237, 244, 255));
@@ -186,7 +190,7 @@ public class CheckMenu {
 			b2.addActionListener(this);
 			
 			//Label for date
-			l1 = new JLabel(dateLabel);
+			l1 = new JLabel(dateConverter(readingDate));
 			l1.setFont(new Font("Ariel",Font.BOLD,18));
 			l1.setBounds(700,5,200,40);
 			
@@ -271,6 +275,12 @@ public class CheckMenu {
 			b4.setBackground(Color.blue);//need fix
 			b4.addActionListener(this);
 			
+			//Labels for comment boxes
+			 commentLabel = new JLabel("Comment");
+			 commentLabel.setBounds(510,210,180,50);
+			 commentLabel.setFont(new Font("Ariel",Font.PLAIN,14));
+			 commentLabel.setHorizontalAlignment(SwingConstants.CENTER);
+			
 			//Panel for above components
 			topPanel = new JPanel();
 			Dimension panelSize = new Dimension(1200,250);
@@ -286,17 +296,27 @@ public class CheckMenu {
 			topPanel.add(newMeterCBox);
 			topPanel.add(l1);
 			topPanel.add(l2);
+			topPanel.add(commentLabel);
 			
 			topPanel.setLayout(null);
 			
+			//For comment box
+			commentBox = new JTextArea(10,20);
+			commentBox.setFont(new Font(null,Font.PLAIN,16));
+			JScrollPane oldScrollPane = new JScrollPane(commentBox);
+			oldScrollPane.setBounds(400, 0, 400, 100);
+			
 			//For Photo
-			photo = new JLabel();
-			photo.setBounds(400,55,400,360);
-			photo.setBorder(BorderFactory.createLineBorder(Color.black, 2));
+			photo = new JButton();
+			photo.setBounds(425,115,350,310);
+			photo.setOpaque(true);
+			photo.setBorder(BorderFactory.createEmptyBorder(10, 10, 10, 10));
+			photo.setBackground(new Color(237, 244, 255));
 			photo.setHorizontalAlignment(SwingConstants.CENTER);
 			//Get resized image as return value by calling customized rescaleImage()method and pass it as arg to icon
 			ImageIcon imageIcon = new ImageIcon(rescaleImage("resources/images/default_photo.png",photo.getWidth(),photo.getHeight()));
 			photo.setIcon(imageIcon);
+			photo.addActionListener(this);
 			
 			contentPane.add(topPanel,BorderLayout.NORTH);
 			
@@ -308,12 +328,21 @@ public class CheckMenu {
 			bottomPanel = new JPanel();
 			bottomPanel.setLayout(null);
 			bottomPanel.add(photo);
-			bottomPanel.add(b5).setBounds(510,415,180,50);
+			bottomPanel.add(b5).setBounds(510,435,180,50);
+			bottomPanel.add(oldScrollPane);
 			bottomPanel.setBackground(new Color(237, 244, 255));
 			
 			
 			contentPane.add(bottomPanel,BorderLayout.CENTER);
 			this.getRootPane().setDefaultButton(b5);
+			//when window is close,make sure cache is cleared
+			this.addWindowListener(new WindowAdapter() {
+				@Override
+				public void windowClosing(WindowEvent e) {
+					imageCache.getCacheManager().close();
+				}
+			});
+			refreshPage(floor.get(floorIndex));
 		}
 		@Override
 		public void itemStateChanged(ItemEvent ie) {
@@ -331,16 +360,15 @@ public class CheckMenu {
 		public void actionPerformed(ActionEvent ae) {
 
 			String floorName = b2.getText();
-			String reading = "0";
+			String reading="";
 			if(!tf.getText().isEmpty()) reading = tf.getText();
-			String readingBeforeChange = "0";
+			String readingBeforeChange="";
 			if(!tfOptional.getText().isEmpty()) readingBeforeChange = tfOptional.getText();
 			
 			//If floor button is pressed
 			if(ae.getSource()==b2) {
 				ChoiceMenu FM01 = new ChoiceMenu(floor,this,b2);
 				//this = an instance of input screen frame who implements CallBack interface and acts as observer and will be observing it's subject,choiceMenu
-				
 			}
 			//if combobox is changed,text field will be refreshed
 			if(ae.getSource()==cb) {
@@ -357,19 +385,7 @@ public class CheckMenu {
 					tfOptional.setText("");
 				}
 				
-				//Updating photo
-				//File will be named in bldName_readingdate_floorname_readingtype
-				String newFileName = imageFileNameBuilder();
-				String destinationFolder = "resources/user_input";
-
-		        // Construct the full path of the destination file
-		        String destinationPath = destinationFolder + File.separator + newFileName;
-		        
-		        File file = new File(destinationPath);
-		        //if file exists in app's directory, display the image that was uploaded
-		        //else display default photo image
-		        if(file.exists()) displayImage(destinationPath);
-		        else displayImage("resources/images/default_photo.png");
+				updatePhoto();
 			}
 			//if up button is pressed
 			if(ae.getSource()==b3) {
@@ -378,7 +394,6 @@ public class CheckMenu {
 					b2.setText(floor.get(floorIndex));
 					refreshPage(floor.get(floorIndex));
 				}
-		
 			}		
 			//if down button is pressed
 			if(ae.getSource()==b4) {
@@ -395,23 +410,28 @@ public class CheckMenu {
 				if(comboBoxState != null) {
 					switch(comboBoxState) {
 					case "電灯" : operationForAE.setReadings(floorName, reading, readingBeforeChange, 0);
-					cb.setSelectedItem(unitType[1]);tf.setText("");tfOptional.setText("");
+					operationForAE.setComments(floorName, commentBox.getText());
+					cb.setSelectedItem(unitType[1]);refreshPage(floor.get(floorIndex));
 					newMeterCBox.setSelected(false);
 					tf.requestFocus();
 					break;
-					case "動力" : operationForAE.setReadings(floorName, reading, readingBeforeChange, 1);
-					cb.setSelectedItem(unitType[2]);tf.setText("");tfOptional.setText("");
-					newMeterCBox.setSelected(false);
-					tf.requestFocus();
-					break;
-					case "水道" : operationForAE.setReadings(floorName, reading, readingBeforeChange, 2);
-					cb.setSelectedItem(unitType[3]);tf.setText("");tfOptional.setText("");
-					newMeterCBox.setSelected(false);
-					tf.requestFocus();
-					break;
-					case "ガス" : operationForAE.setReadings(floorName, reading, readingBeforeChange, 3);
 					
-					tfOptional.setText("");
+					case "動力" : operationForAE.setReadings(floorName, reading, readingBeforeChange, 1);
+					operationForAE.setComments(floorName, commentBox.getText());
+					cb.setSelectedItem(unitType[2]);refreshPage(floor.get(floorIndex));
+					newMeterCBox.setSelected(false);
+					tf.requestFocus();
+					break;
+					
+					case "水道" : operationForAE.setReadings(floorName, reading, readingBeforeChange, 2);
+					operationForAE.setComments(floorName, commentBox.getText());
+					cb.setSelectedItem(unitType[3]);refreshPage(floor.get(floorIndex));
+					newMeterCBox.setSelected(false);
+					tf.requestFocus();
+					break;
+					
+					case "ガス" : operationForAE.setReadings(floorName, reading, readingBeforeChange, 3);
+					operationForAE.setComments(floorName, commentBox.getText());
 					newMeterCBox.setSelected(false);
 					cb.setSelectedItem(unitType[0]);
 					if(floorIndex<floor.size()-1) {
@@ -420,14 +440,21 @@ public class CheckMenu {
 						refreshPage(floor.get(floorIndex));
 					};
 					tf.requestFocus();
-					break;
-					
+					break;		
 					}
+				}
+			}
+			if(ae.getSource() == photo) {
+				JFileChooser fileChooser = new JFileChooser();
+				int option = fileChooser.showOpenDialog(null);
 				
+				if(option == JFileChooser.APPROVE_OPTION) {
+					File selectedFile = fileChooser.getSelectedFile();
+					displayImage(selectedFile.getAbsolutePath());
+					copyImage(selectedFile);
 				}
 			}
 		}
-		
 		//Sub-program for resizing of images
 		public Image rescaleImage(String path,int width, int height) {
 			BufferedImage img = null;
@@ -440,6 +467,13 @@ public class CheckMenu {
 				e.printStackTrace();
 				return null;
 			}
+		}
+		//Sub-program for converting LocalDate to String
+		public String dateConverter(LocalDate readingDate) {
+			if(readingDate == null) {
+				return "";
+			}
+			return String.format("%4d年%1d月", readingDate.getYear(), readingDate.getMonthValue());
 		}
 		//Method to display image selected from file chooser
 		public void displayImage(String path) {
@@ -477,12 +511,51 @@ public class CheckMenu {
 		
 		//ImageFileNameBuilder
 		public String imageFileNameBuilder() {
-			int thisMonth = Integer.valueOf(dateLabel.substring(dateLabel.indexOf("年")+1,dateLabel.indexOf("月")));
-			int thisYear = Integer.valueOf(dateLabel.substring(0,dateLabel.indexOf("年")));
-			String currMonth = String.format("%4d-%02d-01",thisYear,thisMonth);
+
+			String currMonth = String.format("%4d-%02d-01",readingDate.getYear(),readingDate.getMonthValue());
 			String readingType = (String) cb.getSelectedItem();
 			//File will be named in bldName_readingdate_floorname_readingtype
 			return  buildingName+"_"+currMonth+"_"+floor.get(floorIndex)+"_"+readingType+".jpg";
+		}
+		public void updatePhoto() {
+			//Updating photo
+			//File will be named in bldName_readingdate_floorname_readingtype
+			String fileName = imageFileNameBuilder();
+			//look for the image in cache
+			if(!imageCache.getImageCache().containsKey(fileName)) {
+				//call HttpService method to look for the image with this unique file name in DB
+				try {
+					System.out.println("**********");
+					byte[] imageData = HttpService.getImages(fileName);
+					System.out.println(imageData);
+					if(imageData!=null) {
+						imageCache.getImageCache().put(fileName, imageData);
+					}
+				}
+				catch(IOException e) {
+					e.printStackTrace();
+				}
+			}
+			
+			byte[] imageData = imageCache.getImageCache().get(fileName);
+			System.out.println(fileName+"\n"+imageData);
+			
+	        if(imageData!=null) {
+	        	ByteArrayInputStream bis = new ByteArrayInputStream(imageData);
+	        	try {
+					BufferedImage bufferedImage = ImageIO.read(bis);
+					ImageIcon imageIcon = new ImageIcon(bufferedImage);
+					Image image = imageIcon.getImage();
+					Image scaledImage = image.getScaledInstance(photo.getWidth(), photo.getHeight(), Image.SCALE_SMOOTH);
+					ImageIcon newImageIcon = new ImageIcon(scaledImage);
+					photo.setIcon(newImageIcon);
+				} catch (IOException e) {
+					e.printStackTrace();
+				}
+	        	
+	        	
+	        }
+	        else displayImage("resources/images/default_photo.png");
 		}
 		
 		//Observer will execute this method,once there is a change in it's subject
@@ -514,20 +587,14 @@ public class CheckMenu {
 			}
 			else tfOptional.setText("");
 			
-			//Updating photo
+			String comment = operationForAE.getComments(floorName);
+			if(comment!=null) {
+				commentBox.setText(comment);
+			}
+			else commentBox.setText("");
 			
-			//File will be named in bldName_readingdate_floorname_readingtype
-			String newFileName = imageFileNameBuilder();
-			String destinationFolder = "resources/user_input";
-
-	        // Construct the full path of the destination file
-	        String destinationPath = destinationFolder + File.separator + newFileName;
-	        
-	        File file = new File(destinationPath);
-	        if(file.exists()) displayImage(destinationPath);
-	        else displayImage("resources/images/default_photo.png");
+			updatePhoto();
 		}
-		
 	}
 
 

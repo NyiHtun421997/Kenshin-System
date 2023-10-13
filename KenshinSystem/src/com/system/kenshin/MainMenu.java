@@ -11,7 +11,10 @@ import java.awt.event.ActionListener;
 import java.awt.image.BufferedImage;
 import java.io.File;
 import java.io.IOException;
+import java.time.LocalDate;
+import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
+import java.util.LinkedHashMap;
 import java.util.List;
 
 import javax.imageio.ImageIO;
@@ -20,6 +23,7 @@ import javax.swing.ImageIcon;
 import javax.swing.JButton;
 import javax.swing.JFrame;
 import javax.swing.JLabel;
+import javax.swing.JOptionPane;
 import javax.swing.SwingConstants;
 
 
@@ -29,10 +33,12 @@ public class MainMenu extends JFrame implements ActionListener,CallBack{
 	JLabel 	dateJLabel,inputLabel,checkLabel,buildingLabel1,buildingLabel2;
 
 	//these will be inside main menu which will call constructor of InputScreen
-	String dateLabel = "";//must follow this ○年○月 pattern
+	private LocalDate readingDate;
 	//will be populated from server
-	List<String> buildingName = new ArrayList<String>();
-	List<String> floor = new ArrayList<String>();
+	private List<String> buildingName = new ArrayList<String>();
+	private List<String> floor = new ArrayList<String>();
+	private LinkedHashMap<String,FloorReading> floorReadingsMap;
+	private ReadingOperation operationForAE;
 	
 	MainMenu(){
 		
@@ -41,7 +47,7 @@ public class MainMenu extends JFrame implements ActionListener,CallBack{
 		Container contentPane = this.getContentPane();
 		buildingName = HttpService.getBuildings();
 		
-		dateJLabel = new JLabel(dateLabel);
+		dateJLabel = new JLabel(dateConverter(readingDate));//must follow this ○年○月 pattern
 		dateJLabel.setBounds(405,20,120,40);
 		dateJLabel.setFont(new Font("Ariel",Font.BOLD,18));
 		
@@ -66,7 +72,7 @@ public class MainMenu extends JFrame implements ActionListener,CallBack{
 		checkButton.setBackground(new Color(237, 244, 255));
 		imageIcon = new ImageIcon(rescaleImage("resources/images/check.png",checkButton.getWidth(),checkButton.getHeight()));
 		checkButton.setIcon(imageIcon);
-		//checkButton.addActionListener(this);
+		checkButton.addActionListener(this);
 
 		checkLabel = new JLabel("チェック");
 		checkLabel.setBounds(560,260,80,40);
@@ -106,22 +112,54 @@ public class MainMenu extends JFrame implements ActionListener,CallBack{
 	}
 	@Override
 	public void actionPerformed(ActionEvent ae) {
-		
+		String currentBuildingLabel = buildingLabel2.getText();
 		if(ae.getSource()==inputButton) {
-			if(buildingLabel2.getText()!="") {
-				if(!HttpService.checkForBuilding(buildingLabel2.getText())) {
+			if(currentBuildingLabel!="") {
+				if(!HttpService.checkForBuilding(currentBuildingLabel)) {
 
-					floor = HttpService.getFloorListForBld(buildingLabel2.getText());
-					new InputScreen(buildingLabel2.getText(),dateLabel,floor);
+					floor = HttpService.getFloorListForBld(currentBuildingLabel);
+					new InputScreen(currentBuildingLabel,readingDate,floor);
 					this.dispose();
 				}
+				else throw new CustomException("Data for this building is already being created.");
 			}
+			else throw new CustomException("Choose a building.");
 			
 		}
 		if(ae.getSource()==buildingButton) {
 			
 			new BuildingMenu(buildingName,this,buildingButton);
 			//this = an instance of input screen frame who implements CallBack interface and acts as observer and will be observing it's subject,buildingMenu
+		}
+		
+		if(ae.getSource() == checkButton) {
+			
+			if(currentBuildingLabel!="") {
+				
+				//will ask user to check data for latest month or other months
+				ImageIcon decorativeIcon = new ImageIcon("resources/images/ask.png");
+				Image decorativeImage = decorativeIcon.getImage();
+				decorativeIcon = new ImageIcon(decorativeImage.getScaledInstance(50, 50, Image.SCALE_SMOOTH));
+		
+		        int choice = JOptionPane.showConfirmDialog(null,"Do you want to check data for Latest Month?", "Confirmation", JOptionPane.YES_NO_OPTION,JOptionPane.QUESTION_MESSAGE,decorativeIcon);	
+		        if(choice == JOptionPane.YES_OPTION) {
+		        	//call HttpService method to get LinkedHashMap data for readings
+		        	floorReadingsMap = HttpService.getFloorReadingsFromTempo(currentBuildingLabel);
+		        	operationForAE = new Operation(floorReadingsMap,true);
+		        	floor = HttpService.getFloorListForBld(currentBuildingLabel);
+		        	//move to CH01
+		        	new CheckMenu(operationForAE,currentBuildingLabel,readingDate,floor);
+		        	this.dispose();
+		        }else {
+		        	//let user chooses Month
+		        	//call HttpService method to get a list of reading dates for a building
+					List<String> readingDateList = HttpService.getReadingDatesForBuilding(currentBuildingLabel);
+					new ChoiceMenu(readingDateList,this,checkButton);
+					//this = an instance of input screen frame who implements CallBack interface and acts as observer and will be observing it's subject,choiceMenu
+		        }
+				
+			}	
+			else throw new CustomException("Choose a building.");
 		}
 		
 	}
@@ -154,13 +192,46 @@ public class MainMenu extends JFrame implements ActionListener,CallBack{
 				return null;
 			}
 		}
+		//Sub-program for converting LocalDate to String
+		public String dateConverter(LocalDate readingDate) {
+			if(readingDate == null) {
+				return "";
+			}
+			return String.format("%4d年%1d月", readingDate.getYear(), readingDate.getMonthValue());
+		}
 	@Override
 	public void onButtonClicked(String componentText, JButton b) {
 		//componentText will accept the text of the button which was clicked on BM01
-		buildingLabel2.setText(componentText);
-		dateLabel = HttpService.getLatestDate(componentText);
-		dateJLabel.setText(dateLabel);
-		
-	}
-
+		if(b == buildingButton) {
+			buildingLabel2.setText(componentText);
+			readingDate = HttpService.getLatestDate(componentText);
+			dateJLabel.setText(dateConverter(readingDate));
+		}
+		if(b == checkButton) {
+			//User will finish choosing a month to check and then will ask user to continue to CheckMenu
+			//Creating a confirmation dialog box before moving to CH01
+			ImageIcon decorativeIcon = new ImageIcon("resources/images/ask.png");
+			Image decorativeImage = decorativeIcon.getImage();
+			decorativeIcon = new ImageIcon(decorativeImage.getScaledInstance(50, 50, Image.SCALE_SMOOTH));
+	
+	        int choice = JOptionPane.showConfirmDialog(null,"Do you want to check data for "+componentText+"?", "Confirmation", JOptionPane.YES_NO_OPTION,JOptionPane.QUESTION_MESSAGE,decorativeIcon);	
+	        if(choice == JOptionPane.YES_OPTION) {
+	        	String currentBuildingLabel = buildingLabel2.getText();
+	        	 DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd");
+	             // Parse the string into a LocalDate using the defined formatter
+	             LocalDate date = LocalDate.parse(componentText, formatter);
+	             
+	        	//call HttpService method to get LinkedHashMap data for readings
+	        	floorReadingsMap = HttpService.getFloorReadings(currentBuildingLabel, componentText);
+	        	operationForAE = new Operation(floorReadingsMap,false);
+	        	floor = HttpService.getFloorListForBld(currentBuildingLabel);
+	        	//move to CH01
+	        	new CheckMenu(operationForAE,currentBuildingLabel,date,floor);
+	        	this.dispose();
+	        }
+	        else {}		
+		}
+	}	
 }
+
+

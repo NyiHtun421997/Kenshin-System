@@ -7,19 +7,24 @@ import java.util.List;
 
 public class Operation implements ReadingOperation{
 	
+	private boolean isLatestMonth = true;
 	private LinkedHashMap<String,FloorReading> floorReadingsMap;
 	
-	Operation(LinkedHashMap<String,FloorReading> floorReadingsMap){
+	Operation(LinkedHashMap<String,FloorReading> floorReadingsMap,boolean isLatestMonth){
 		this.floorReadingsMap = floorReadingsMap;
+		this.isLatestMonth = isLatestMonth;
 	}
 	Operation(){
 		floorReadingsMap = new LinkedHashMap<>();
-	}
+	}	
 	
 	@Override
-	public void startOperation(String buildingName, String dateLabel, List<String> floor){
+	public boolean isLatestMonth() {
+		return isLatestMonth;
+	}
+	@Override
+	public void startOperation(String buildingName, LocalDate readingDate, List<String> floor){
 		
-		LocalDate readingDate = convertDate(dateLabel);
 		//loop until the number of floors of a building,must get number of floors as parameter
 		for(int i=0;i<floor.size();i++) {
 			
@@ -61,25 +66,15 @@ public class Operation implements ReadingOperation{
 	public LinkedHashMap<String,FloorReading> getAllReadings(){
 		return floorReadingsMap;
 	}
-	
-	public LocalDate convertDate(String dateLabel) {
-		
-		//Getting date as String and converting to LocalDate
-		DateTimeFormatter dateFormat = DateTimeFormatter.ofPattern("yyyy-M-dd");
-		String year = dateLabel.substring(0,dateLabel.indexOf("年"));
-		String month = dateLabel.substring(dateLabel.indexOf("年")+1,dateLabel.indexOf("月"));
-		
-		dateLabel = year+"-"+month+"-01";
-		LocalDate readingDate;
-		try {
-			readingDate = LocalDate.parse(dateLabel, dateFormat);
-			return readingDate;
-		}
-		
-		catch(Exception e) {e.printStackTrace();return null;}
-		
+	@Override
+	public String getComments(String floorName) {
+		FloorReading reading = floorReadingsMap.get(floorName);
+		return reading.getComment();
 	}
-	
-	
-
+	@Override
+	public void setComments(String floorName,String comment) {
+		FloorReading newReading = floorReadingsMap.get(floorName);
+		newReading.setComment(comment);
+		floorReadingsMap.put(floorName, newReading);
+	}
 }
