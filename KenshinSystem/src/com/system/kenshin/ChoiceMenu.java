@@ -36,7 +36,6 @@ public class ChoiceMenu extends JFrame implements ActionListener {
 		this.setSize(900,500);
 		this.setVisible(true);
 		this.setResizable(true);
-		this.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
 		
 		buttonPanel = new JPanel(new GridLayout((floor.size()/4)+1,4,10,10));
 		//for adding floorIcon

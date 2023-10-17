@@ -16,9 +16,12 @@ import java.awt.event.ItemEvent;
 import java.awt.event.ItemListener;
 import java.awt.event.KeyAdapter;
 import java.awt.event.KeyEvent;
+import java.awt.event.WindowAdapter;
+import java.awt.event.WindowEvent;
 import java.awt.image.BufferedImage;
 import java.io.BufferedInputStream;
 import java.io.BufferedOutputStream;
+import java.io.ByteArrayInputStream;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileOutputStream;
@@ -27,8 +30,10 @@ import java.text.DecimalFormat;
 import java.text.NumberFormat;
 import java.time.LocalDate;
 import java.util.ArrayList;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Locale;
+import java.util.Map.Entry;
 
 import javax.imageio.ImageIO;
 import javax.swing.BorderFactory;
@@ -48,6 +53,8 @@ import javax.swing.JPanel;
 import javax.swing.JTextField;
 import javax.swing.SwingConstants;
 import javax.swing.text.NumberFormatter;
+
+import org.ehcache.Cache;
 
 public class InputScreen {
 	
@@ -101,6 +108,8 @@ class InputScreenFrame extends JFrame implements ItemListener,ActionListener,Cal
 	JFormattedTextField tf,tfOptional;
 	JCheckBox cbox,newMeterCBox;
 	CardLayout cl;
+	
+	private ImageCache imageCache;
 	private String buildingName;
 	private LocalDate readingDate;
 	private List<String> floor;
@@ -108,7 +117,7 @@ class InputScreenFrame extends JFrame implements ItemListener,ActionListener,Cal
 	private String unitType [] = {"電灯","動力","水道","ガス"};
 	private ReadingOperation operationForAE;
 	
-	private static int floorIndex = 0;
+	private int floorIndex = 0;
 	
 	InputScreenFrame(ReadingOperation operationForAE,String buildingName, LocalDate readingDate, List<String> floor){
 		super("Input Menu");
@@ -119,6 +128,7 @@ class InputScreenFrame extends JFrame implements ItemListener,ActionListener,Cal
 		this.buildingName = buildingName;
 		this.readingDate = readingDate;
 		this.floor = floor;
+		imageCache = new ImageCache();
 		//once the input menu is opened,operation will be constructed
 		operationForAE.startOperation(buildingName, readingDate, floor);
 		
@@ -134,36 +144,40 @@ class InputScreenFrame extends JFrame implements ItemListener,ActionListener,Cal
 		saveMenu.addActionListener((ActionEvent ae)->{
 			
 			HttpService.storeToTempMap(operationForAE.getAllReadings());
-			
 			//Creating a confirmation dialog box before moving to CS01
 			ImageIcon decorativeIcon = new ImageIcon("resources/images/ask.png");
 			Image decorativeImage = decorativeIcon.getImage();
 			decorativeIcon = new ImageIcon(decorativeImage.getScaledInstance(50, 50, Image.SCALE_SMOOTH));
 	
-	        int choice = JOptionPane.showConfirmDialog(null,"Do you want to proceed?", "Confirmation", JOptionPane.YES_NO_OPTION,JOptionPane.QUESTION_MESSAGE,decorativeIcon);
+	        int choice = JOptionPane.showConfirmDialog(null,"Do you want to proceed to Compare Screen?", "Confirmation", JOptionPane.YES_NO_OPTION,JOptionPane.QUESTION_MESSAGE,decorativeIcon);
 			
 	        if(choice == JOptionPane.YES_OPTION) {
 	        	//will save all the image files inside app's directory to server and delete them
 	        	try{
-	        		HttpService.storeImages();
+	        		Iterator<Cache.Entry<String, byte[]>> iterator = imageCache.getImageCache().iterator();
+	        		while(iterator.hasNext()) {
+	        			Cache.Entry<String, byte[]> entry = iterator.next();
+	        			HttpService.storeImages(entry.getKey(),entry.getValue());
+	        		}
 	        	}
-	        	catch(IOException e) {
-	        		e.printStackTrace();
-	        		throw new CustomException(e);
+	        	catch(IOException ie) {
+	        		ie.printStackTrace();
+	        		throw new CustomException(ie);
 	        		//Shows error page
 	        	}
-	        	catch(CustomException e) {
-	        		new CustomException(e.getMessage());
+	        	catch(CustomException ie) {
+	        		new CustomException(ie.getMessage());
+	        	}
+	        	finally {
+	        		imageCache.getCacheManager().close();
 	        	}
 	        	//after saving close this window and jump to CS01
-				new CompareScreen(buildingName,readingDate);
+				new CompareScreen(buildingName,readingDate,true);
 				this.dispose();
 	        }
-	        else {}
-			
+	        else {}		
 		});
-		
-		
+			
 		//Label for buildings
 		b1 = new JLabel(buildingName);
 		b1.setFont(new Font("Ariel",Font.BOLD,18));
@@ -347,6 +361,14 @@ class InputScreenFrame extends JFrame implements ItemListener,ActionListener,Cal
 		
 		contentPane.add(mainBottomPanel,BorderLayout.CENTER);
 		this.getRootPane().setDefaultButton(b5);
+		//when window is close,make sure cache is cleared
+		this.addWindowListener(new WindowAdapter() {
+			@Override
+			public void windowClosing(WindowEvent e) {
+				//will save all the image files inside app's directory to server and delete them
+				imageCache.getCacheManager().close();
+			}
+		});
 	}
 	@Override
 	public void itemStateChanged(ItemEvent ie) {
@@ -399,20 +421,7 @@ class InputScreenFrame extends JFrame implements ItemListener,ActionListener,Cal
 				tf.setText("");
 				tfOptional.setText("");
 			}
-			
-			//Updating photo
-			//File will be named in bldName_readingdate_floorname_readingtype
-			String newFileName = imageFileNameBuilder();
-			String destinationFolder = "resources/user_input";
-
-	        // Construct the full path of the destination file
-	        String destinationPath = destinationFolder + File.separator + newFileName;
-	        
-	        File file = new File(destinationPath);
-	        //if file exists in app's directory, display the image that was uploaded
-	        //else display default photo image
-	        if(file.exists()) displayImage(destinationPath);
-	        else displayImage("resources/images/default_photo.png");
+			updatePhoto();
 		}
 		//if up button is pressed
 		if(ae.getSource()==b3) {
@@ -438,22 +447,24 @@ class InputScreenFrame extends JFrame implements ItemListener,ActionListener,Cal
 			if(comboBoxState != null) {
 				switch(comboBoxState) {
 				case "電灯" : operationForAE.setReadings(floorName, reading, readingBeforeChange, 0);
-				cb.setSelectedItem(unitType[1]);tf.setText("");tfOptional.setText("");
+				cb.setSelectedItem(unitType[1]);refreshPage(floor.get(floorIndex));
 				newMeterCBox.setSelected(false);
 				tf.requestFocus();
 				break;
-				case "動力" : operationForAE.setReadings(floorName, reading, readingBeforeChange, 1);
-				cb.setSelectedItem(unitType[2]);tf.setText("");tfOptional.setText("");
-				newMeterCBox.setSelected(false);
-				tf.requestFocus();
-				break;
-				case "水道" : operationForAE.setReadings(floorName, reading, readingBeforeChange, 2);
-				cb.setSelectedItem(unitType[3]);tf.setText("");tfOptional.setText("");
-				newMeterCBox.setSelected(false);
-				tf.requestFocus();
-				break;
-				case "ガス" : operationForAE.setReadings(floorName, reading, readingBeforeChange, 3);
 				
+				case "動力" : operationForAE.setReadings(floorName, reading, readingBeforeChange, 1);
+				cb.setSelectedItem(unitType[2]);refreshPage(floor.get(floorIndex));
+				newMeterCBox.setSelected(false);
+				tf.requestFocus();
+				break;
+				
+				case "水道" : operationForAE.setReadings(floorName, reading, readingBeforeChange, 2);
+				cb.setSelectedItem(unitType[3]);refreshPage(floor.get(floorIndex));
+				newMeterCBox.setSelected(false);
+				tf.requestFocus();
+				break;
+				
+				case "ガス" : operationForAE.setReadings(floorName, reading, readingBeforeChange, 3);
 				tfOptional.setText("");
 				newMeterCBox.setSelected(false);
 				cb.setSelectedItem(unitType[0]);
@@ -464,9 +475,7 @@ class InputScreenFrame extends JFrame implements ItemListener,ActionListener,Cal
 				};
 				tf.requestFocus();
 				break;
-				
 				}
-			
 			}
 		}
 	//if upload button is pressed
@@ -475,14 +484,13 @@ class InputScreenFrame extends JFrame implements ItemListener,ActionListener,Cal
 			int option = fileChooser.showOpenDialog(null);
 			
 			if(option == JFileChooser.APPROVE_OPTION) {
+				//Needs to edit
 				File selectedFile = fileChooser.getSelectedFile();
 				displayImage(selectedFile.getAbsolutePath());
 				copyImage(selectedFile);
 			}
-		
 		}
 	}
-	
 	//Sub-program for resizing of images
 	public Image rescaleImage(String path,int width, int height) {
 		BufferedImage img = null;
@@ -511,30 +519,21 @@ class InputScreenFrame extends JFrame implements ItemListener,ActionListener,Cal
 		photo.setIcon(imageIcon);
 	}
 	//Method to copy image selected from file chooser to app's directory
-	public void copyImage(File selectedFile) {	
+	public String copyImage(File selectedFile) {	
 		
 		//File will be named in bldName_readingdate_floorname_readingtype
 		String newFileName = imageFileNameBuilder();
-		String destinationFolder = "resources/user_input";
-
-        // Construct the full path of the destination file
-        String destinationPath = destinationFolder + File.separator + newFileName;
-		
-		System.out.println(newFileName);
 		
 		try(FileInputStream fis = new FileInputStream(selectedFile.getAbsolutePath());
-			BufferedInputStream bis = new BufferedInputStream(fis);
-			FileOutputStream fos = new FileOutputStream(destinationPath);
-			BufferedOutputStream bos = new BufferedOutputStream(fos);) {
+			BufferedInputStream bis = new BufferedInputStream(fis);) {
 			
-			int b;
-			while((b=bis.read())!=-1) {
-				bos.write(b);
+			byte[] imageData = bis.readAllBytes();
+			imageCache.getImageCache().put(newFileName, imageData);
 			}
-		}
 		catch(IOException e) {
 			e.printStackTrace();
 		}
+		return newFileName;
 	}
 	
 	//ImageFileNameBuilder
@@ -545,7 +544,27 @@ class InputScreenFrame extends JFrame implements ItemListener,ActionListener,Cal
 		//File will be named in bldName_readingdate_floorname_readingtype
 		return  buildingName+"_"+currMonth+"_"+floor.get(floorIndex)+"_"+readingType+".jpg";
 	}
-	
+public void updatePhoto() {
+	//Updating photo
+	//File will be named in bldName_readingdate_floorname_readingtype
+	String fileName = imageFileNameBuilder();
+	if(imageCache.getImageCache().containsKey(fileName)) {
+		byte[] imageData = imageCache.getImageCache().get(fileName);
+		ByteArrayInputStream bis = new ByteArrayInputStream(imageData);
+		try {
+			BufferedImage bufferedImage = ImageIO.read(bis);
+			ImageIcon imageIcon = new ImageIcon(bufferedImage);
+			Image image = imageIcon.getImage();
+			Image scaledImage = image.getScaledInstance(photo.getWidth(), photo.getHeight(), Image.SCALE_SMOOTH);
+			ImageIcon newImageIcon = new ImageIcon(scaledImage);
+			photo.setIcon(newImageIcon);
+		}
+		catch (IOException e) {
+			e.printStackTrace();
+		}
+	}
+    else displayImage("resources/images/default_photo.png");
+}	
 	//Observer will execute this method,once there is a change in it's subject
 	//meaning if a button is clicked in BM01 or FM01,these methods will be invoked
 	@Override
@@ -577,19 +596,6 @@ class InputScreenFrame extends JFrame implements ItemListener,ActionListener,Cal
 			tfOptional.setText(readingBeforeChange);
 		}
 		else tfOptional.setText("");
-		
-		//Updating photo
-		
-		//File will be named in bldName_readingdate_floorname_readingtype
-		String newFileName = imageFileNameBuilder();
-		String destinationFolder = "resources/user_input";
-
-        // Construct the full path of the destination file
-        String destinationPath = destinationFolder + File.separator + newFileName;
-        
-        File file = new File(destinationPath);
-        if(file.exists()) displayImage(destinationPath);
-        else displayImage("resources/images/default_photo.png");
+		updatePhoto();
 	}
-	
 }

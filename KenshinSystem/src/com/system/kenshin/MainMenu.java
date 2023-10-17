@@ -108,7 +108,6 @@ public class MainMenu extends JFrame implements ActionListener,CallBack{
 		contentPane.add(buildingButton);
 		contentPane.add(buildingLabel2);
 		contentPane.setBackground(new Color(237, 244, 255));
-		
 	}
 	@Override
 	public void actionPerformed(ActionEvent ae) {

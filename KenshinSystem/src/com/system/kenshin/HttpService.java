@@ -1,27 +1,17 @@
 package com.system.kenshin;
 
-import java.io.File;
 import java.io.IOException;
-import java.io.UnsupportedEncodingException;
 import java.net.URI;
 import java.net.URLEncoder;
 import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
-import java.nio.file.FileVisitResult;
-import java.nio.file.Files;
-import java.nio.file.Path;
-import java.nio.file.Paths;
-import java.nio.file.SimpleFileVisitor;
-import java.nio.file.attribute.BasicFileAttributes;
 import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
 
 import org.apache.http.HttpEntity;
-import org.apache.http.HttpEntityEnclosingRequest;
-import org.apache.http.client.ClientProtocolException;
 import org.apache.http.client.methods.CloseableHttpResponse;
 import org.apache.http.client.methods.HttpGet;
 import org.apache.http.client.methods.HttpPost;
@@ -29,7 +19,6 @@ import org.apache.http.client.methods.HttpPut;
 import org.apache.http.client.methods.HttpRequestBase;
 import org.apache.http.entity.ContentType;
 import org.apache.http.entity.mime.MultipartEntityBuilder;
-import org.apache.http.entity.mime.content.FileBody;
 import org.apache.http.impl.client.CloseableHttpClient;
 import org.apache.http.impl.client.HttpClients;
 import org.apache.http.util.EntityUtils;
@@ -41,7 +30,7 @@ import com.fasterxml.jackson.datatype.jsr310.*;
 
 public class HttpService {
 	
-	private static HttpResponse<String> getMethod(String uri) {
+private static HttpResponse<String> getMethod(String uri) {
 		
 		HttpClient client = HttpClient.newHttpClient();
 		HttpResponse<String> response;
@@ -107,7 +96,7 @@ private static HttpResponse<String> putMethod(String uri,Object object) {
 	}		
 }
 	
-	public static List<String> getBuildings() {
+public static List<String> getBuildings() {
 		
 		List<String> buildingName = new ArrayList<>();
 
@@ -256,7 +245,7 @@ public static void updateReadings(String buildingName,String dateLabel,String fl
 	}
 }
 //getting readings from DB
-public static LinkedHashMap<String,FloorReading> getReadingsFromDB(String url) throws IOException{
+private static LinkedHashMap<String,FloorReading> getReadingsFromDB(String url) throws IOException{
 	
 		HttpResponse<String> response = getMethod(url);
 		if(response.statusCode() == 200) {
@@ -307,7 +296,7 @@ public static LinkedHashMap<String,FloorReading> getFloorReadings(String buildin
 
 }
 //getting readings temporarily stored on server
-public static LinkedHashMap<String,FloorReading> getReadingsFromTempo(String url) throws IOException{
+private static LinkedHashMap<String,FloorReading> getReadingsFromTempo(String url) throws IOException{
 
 		HttpResponse<String> response = getMethod(url);	
 		if(response.statusCode() == 200) {	
@@ -388,19 +377,14 @@ public static void storeComments(LinkedHashMap<String,String> commentData, Strin
 	}
 }
 //method to iterate through app's image file and send each image file to server
-public static void visitFilesAndUpload(HttpRequestBase request) throws IOException,CustomException{
-	String rootFolder = "/Users/nyinyihtun/git/repository/KenshinSystem/resources/user_input";
-    String searchFor = "jpg";
-    SimpleFileVisitor<Path> myFileVisitor = new SimpleFileVisitor<>() {
-    	@Override
-    	public FileVisitResult visitFile(Path path, BasicFileAttributes attrs) throws IOException{
-    		if(path.toString().contains(searchFor)) {
+private static void fileUpload(HttpRequestBase request,String fileName, byte[] imageData) throws IOException,CustomException{
+	
     			CloseableHttpClient client = HttpClients.createDefault();
     			try {
     				MultipartEntityBuilder builder = MultipartEntityBuilder.create();
-    				File file = path.toFile();
-    				String encodedFileName = URLEncoder.encode(file.getName(),"UTF-8");
-    				builder.addPart("image",new FileBody(file,ContentType.IMAGE_JPEG,encodedFileName));
+    				String encodedFileName = URLEncoder.encode(fileName,"UTF-8");
+    				
+    				builder.addBinaryBody("image", imageData, ContentType.IMAGE_JPEG, encodedFileName);
     				HttpEntity entity = builder.build();
     				
     				if(request instanceof HttpPost) {
@@ -419,23 +403,17 @@ public static void visitFilesAndUpload(HttpRequestBase request) throws IOExcepti
     			}
     			finally {
     				client.close();
-    				Files.delete(path);
-    			}
-    		}
-    		return FileVisitResult.CONTINUE;
+    			}  		
     	}
-    };
-    Files.walkFileTree(Paths.get(rootFolder), myFileVisitor);
-}
 
-public static void storeImages() throws IOException,CustomException{
+public static void storeImages(String fileName, byte[] imageData) throws IOException,CustomException{
 	HttpPost request = new HttpPost("http://localhost:8080/api/kenshin/central/images/upload");
-	visitFilesAndUpload(request);
+	fileUpload(request,fileName,imageData);
 }
 
-public static void updateImages() throws IOException,CustomException{
+public static void updateImages(String fileName, byte[] imageData) throws IOException,CustomException{
 	HttpPut request = new HttpPut("http://localhost:8080/api/kenshin/central/images/upload");
-	visitFilesAndUpload(request);
+	fileUpload(request,fileName,imageData);
 }
 
 public static byte[] getImages(String fileName) throws IOException,CustomException{
@@ -447,7 +425,6 @@ public static byte[] getImages(String fileName) throws IOException,CustomExcepti
 			if(response.getStatusLine().getStatusCode() == 200) {
 				HttpEntity entity = response.getEntity();
 				byte[] bytes = EntityUtils.toByteArray(entity);
-				System.out.println(bytes);
 				return  bytes;
 			}
 			else {
@@ -459,4 +436,18 @@ public static byte[] getImages(String fileName) throws IOException,CustomExcepti
 			client.close();
 		}
 	}
+
+public static void approve(String buildingName,String dateLabel) {
+	try {
+		String encodedBuildingName =URLEncoder.encode(buildingName,"UTF-8"); 
+		String encodedReadingDate = URLEncoder.encode(dateLabel,"UTF-8");
+			//loop through each reading obj inside HashMap and call post method
+			postMethod("http://localhost:8080/api/kenshin/central/temporary/approve?building_name="+encodedBuildingName+"&reading_date="+encodedReadingDate,"Approve");			
+	}
+	catch(IOException e) {
+		e.printStackTrace();
+		throw new CustomException(e);
+		
+	}
+}
 }

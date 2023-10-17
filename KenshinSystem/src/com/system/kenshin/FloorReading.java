@@ -10,6 +10,7 @@ public class FloorReading implements Serializable{
 	private String buildingName,floorName;
 	private LocalDate readingDate;
 	private String comment="";
+	private Boolean isParent;
 	
 	//Constructor
 	public FloorReading(String buildingName, String floorName, LocalDate readingDate,Double reading) {
@@ -88,11 +89,18 @@ public class FloorReading implements Serializable{
 	public void setComment(String comment) {
 		this.comment = comment;
 	}
+	
+	public Boolean getIsParent() {
+		return isParent;
+	}
+	public void setIsParent(Boolean isParent) {
+		this.isParent = isParent;
+	}
 	//ToString
 	@Override
 	public String toString() {
 		return "floorReading [buildingName=" + buildingName + ", floorName=" + floorName + ", readingDate="
-				+ readingDate + ", 電灯= "+this.readings[0]+", 動力= "+this.readings[1]+
+				+ readingDate + "ParentMeter="+isParent+ ", 電灯= "+this.readings[0]+", 動力= "+this.readings[1]+
 				", 水道= "+this.readings[2]+", ガス= "+this.readings[3]+"]";
 	}
 	

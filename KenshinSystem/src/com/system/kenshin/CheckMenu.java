@@ -27,6 +27,7 @@ import java.text.DecimalFormat;
 import java.text.NumberFormat;
 import java.time.LocalDate;
 import java.util.ArrayList;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Locale;
 
@@ -50,6 +51,8 @@ import javax.swing.JTextArea;
 import javax.swing.JTextField;
 import javax.swing.SwingConstants;
 import javax.swing.text.NumberFormatter;
+
+import org.ehcache.Cache;
 
 public class CheckMenu {
 	
@@ -110,7 +113,7 @@ public class CheckMenu {
 		private String unitType [] = {"電灯","動力","水道","ガス"};
 		private ReadingOperation operationForAE;
 		
-		private static int floorIndex = 0;
+		private int floorIndex = 0;
 		
 		CheckMenuFrame(ReadingOperation operationForAE,String buildingName, LocalDate readingDate, List<String> floor){
 			super("Check Menu");
@@ -131,13 +134,10 @@ public class CheckMenu {
 			menuBar.setBackground(Color.blue);
 			
 			setJMenuBar(menuBar);
-			
 			saveMenu.addActionListener((ActionEvent ae)->{
-			
 				//call storeToTempMap method for lastetMonth
 				if(operationForAE.isLatestMonth())
 					HttpService.storeToTempMap(operationForAE.getAllReadings());
-				
 				//call HttpService method to update DB for non-latestMonths
 				else {
 					HttpService.updateReadings(buildingName,String.format("%4d-%02d-01", readingDate.getYear(), readingDate.getMonthValue()) , floor.get(floorIndex), operationForAE.getAllReadings());
@@ -147,13 +147,16 @@ public class CheckMenu {
 				Image decorativeImage = decorativeIcon.getImage();
 				decorativeIcon = new ImageIcon(decorativeImage.getScaledInstance(50, 50, Image.SCALE_SMOOTH));
 		
-		        int choice = JOptionPane.showConfirmDialog(null,"Do you want to proceed?", "Confirmation", JOptionPane.YES_NO_OPTION,JOptionPane.QUESTION_MESSAGE,decorativeIcon);
+		        int choice = JOptionPane.showConfirmDialog(null,"Do you want to proceed to Compare Screen?", "Confirmation", JOptionPane.YES_NO_OPTION,JOptionPane.QUESTION_MESSAGE,decorativeIcon);
 				
 		        if(choice == JOptionPane.YES_OPTION) {
 		        	//will save all the image files inside app's directory to server and delete them
 		        	try{
-		        		//calls HttpService method to update images
-		        		HttpService.updateImages();
+		        		Iterator<Cache.Entry<String, byte[]>> iterator = imageCache.getImageCache().iterator();
+		        		while(iterator.hasNext()) {
+		        			Cache.Entry<String, byte[]> entry = iterator.next();
+		        			HttpService.updateImages(entry.getKey(),entry.getValue());
+		        		}
 		        	}
 		        	catch(IOException e) {
 		        		e.printStackTrace();
@@ -163,8 +166,14 @@ public class CheckMenu {
 		        	catch(CustomException e) {
 		        		new CustomException(e.getMessage());
 		        	}
+		        	finally {
+		        		imageCache.getCacheManager().close();
+		        	}
 		        	//after saving close this window and jump to CS01
-					new CompareScreen(buildingName,readingDate);
+		        	if(operationForAE.isLatestMonth())
+						new CompareScreen(buildingName,readingDate,true);
+					else
+						new CompareScreen(buildingName,readingDate,false);
 					this.dispose();
 		        }
 		        else {}
@@ -483,30 +492,21 @@ public class CheckMenu {
 			photo.setIcon(imageIcon);
 		}
 		//Method to copy image selected from file chooser to app's directory
-		public void copyImage(File selectedFile) {	
+		public String copyImage(File selectedFile) {	
 			
 			//File will be named in bldName_readingdate_floorname_readingtype
 			String newFileName = imageFileNameBuilder();
-			String destinationFolder = "resources/user_input";
-
-	        // Construct the full path of the destination file
-	        String destinationPath = destinationFolder + File.separator + newFileName;
-			
-			System.out.println(newFileName);
 			
 			try(FileInputStream fis = new FileInputStream(selectedFile.getAbsolutePath());
-				BufferedInputStream bis = new BufferedInputStream(fis);
-				FileOutputStream fos = new FileOutputStream(destinationPath);
-				BufferedOutputStream bos = new BufferedOutputStream(fos);) {
+				BufferedInputStream bis = new BufferedInputStream(fis);) {
 				
-				int b;
-				while((b=bis.read())!=-1) {
-					bos.write(b);
-				}
+				byte[] imageData = bis.readAllBytes();
+				imageCache.getImageCache().put(newFileName, imageData);
 			}
 			catch(IOException e) {
 				e.printStackTrace();
 			}
+			return newFileName;
 		}
 		
 		//ImageFileNameBuilder
@@ -525,9 +525,7 @@ public class CheckMenu {
 			if(!imageCache.getImageCache().containsKey(fileName)) {
 				//call HttpService method to look for the image with this unique file name in DB
 				try {
-					System.out.println("**********");
 					byte[] imageData = HttpService.getImages(fileName);
-					System.out.println(imageData);
 					if(imageData!=null) {
 						imageCache.getImageCache().put(fileName, imageData);
 					}
@@ -538,7 +536,6 @@ public class CheckMenu {
 			}
 			
 			byte[] imageData = imageCache.getImageCache().get(fileName);
-			System.out.println(fileName+"\n"+imageData);
 			
 	        if(imageData!=null) {
 	        	ByteArrayInputStream bis = new ByteArrayInputStream(imageData);
@@ -556,8 +553,7 @@ public class CheckMenu {
 	        	
 	        }
 	        else displayImage("resources/images/default_photo.png");
-		}
-		
+		}	
 		//Observer will execute this method,once there is a change in it's subject
 		//meaning if a button is clicked in BM01 or FM01,these methods will be invoked
 		@Override
