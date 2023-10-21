@@ -66,7 +66,7 @@ public class ChoiceMenu extends JFrame implements ActionListener {
 		// Set the vertical scrollbar policy to "as needed"
         sp.setVerticalScrollBarPolicy(JScrollPane.VERTICAL_SCROLLBAR_ALWAYS);
      // Set the horizontal scrollbar policy to "never" to turn it off
-        sp.setHorizontalScrollBarPolicy(JScrollPane.HORIZONTAL_SCROLLBAR_NEVER);
+        sp.setHorizontalScrollBarPolicy(JScrollPane.HORIZONTAL_SCROLLBAR_ALWAYS);
 
 
         // Set the preferred size of the JScrollPane to enable scrolling

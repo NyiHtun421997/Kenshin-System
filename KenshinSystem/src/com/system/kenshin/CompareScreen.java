@@ -16,7 +16,6 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.StringTokenizer;
 import java.awt.Color;
-import java.awt.Component;
 import javax.swing.JFrame;
 import javax.swing.JLabel;
 import javax.swing.JMenu;
@@ -38,38 +37,15 @@ public class CompareScreen{
 	private List<String> floor_Tenant = new ArrayList<>();
 	private boolean isLatestMonth;
 	
-	//For Testing
-	public static void main(String[] args) {
-		//will accept as arg from IS01/01
-		String buildingName = "Sample Building C";
-		LocalDate readingDate = LocalDate.of(2023, 11, 1);
-		//will accept as arg from server
-		List<String> floor_Tenant = new ArrayList<>(List.of("1F・Dental","1F・Convinienece","2F・ABC＿CompanyLimited","3F・大京"));
-		boolean isLatestMonth = true;
-	    EventQueue.invokeLater(new Runnable() {
-			@Override
-			public void run() {
-			try {
-				CompareScreenFrame compareScreen = new CompareScreenFrame(buildingName,readingDate,floor_Tenant,isLatestMonth);
-				compareScreen.setSize(1200,800);
-				compareScreen.setVisible(true);
-				compareScreen.setResizable(false);
-			    compareScreen.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
-	} 
-			catch (Exception e) {
-					e.printStackTrace();
-
-	}}});}
-	
-	public CompareScreen(String buildingName,LocalDate readingDate,boolean isLatestMonth){
+	public CompareScreen(String buildingName,LocalDate readingDate,boolean isLatestMonth,HttpService httpService){
 		
-		floor_Tenant = HttpService.getTenantListForBld(buildingName);
+		floor_Tenant = httpService.getTenantListForBld(buildingName);
 		this.isLatestMonth = isLatestMonth;
 		EventQueue.invokeLater(new Runnable() {
 			@Override
 			public void run() {
 				try {
-					CompareScreenFrame compareScreen = new CompareScreenFrame(buildingName,readingDate,floor_Tenant,isLatestMonth);
+					CompareScreenFrame compareScreen = new CompareScreenFrame(buildingName,readingDate,floor_Tenant,isLatestMonth,httpService);
 					compareScreen.setSize(1200,800);
 					compareScreen.setVisible(true);
 					compareScreen.setResizable(false);
@@ -81,7 +57,29 @@ public class CompareScreen{
 			}
 		});
 	}
-	
+	//For Testing
+		public static void main(String[] args) {
+			//will accept as arg from IS01/01
+			String buildingName = "Orix Building";
+			LocalDate readingDate = LocalDate.of(2023, 10, 1);
+			HttpService httpService = new HttpService(new TokenManager("eyJhbGciOiJIUzI1NiJ9.eyJzdWIiOiJueWlodHV1bkBnbWFpbC5jb20iLCJpYXQiOjE2OTc4ODc5MzMsImV4cCI6MTY5Nzg5ODczM30.EHDj8f_Blvnpr59dyTtXkZX7n8i89N3Qf4ZNw-DZEKI"));
+			//will accept as arg from server
+			List<String> floor_Tenant = httpService.getTenantListForBld(buildingName);
+			boolean isLatestMonth = true;
+		    EventQueue.invokeLater(new Runnable() {
+				@Override
+				public void run() {
+				try {
+					CompareScreenFrame compareScreen = new CompareScreenFrame(buildingName,readingDate,floor_Tenant,isLatestMonth,httpService);
+					compareScreen.setSize(1200,800);
+					compareScreen.setVisible(true);
+					compareScreen.setResizable(false);
+				    compareScreen.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
+		} 
+				catch (Exception e) {
+						e.printStackTrace();
+
+		}}});}
 }
 class CompareScreenFrame extends JFrame implements ActionListener,CallBack{
   
@@ -97,6 +95,7 @@ private LocalDate readingDate;
 private List<String> floor_Tenant;
 private static int floor_TenantIndex = 0;
 private boolean isLatestMonth;
+private final HttpService httpService;
 
 LinkedHashMap<String,FloorReading> currentMonthData;
 LinkedHashMap<String,FloorReading> prevMonthData;
@@ -106,39 +105,40 @@ LinkedHashMap<String,FloorReading> prevYearPrevMonthData;
 //Collection to store comments for each reading
 LinkedHashMap<String,String> commentData;
     
-  public CompareScreenFrame(String buildingName, LocalDate readingDate,  List<String> floor_Tenant,boolean isLatestMonth){
+  public CompareScreenFrame(String buildingName, LocalDate readingDate,  List<String> floor_Tenant,boolean isLatestMonth, HttpService httpService){
     
   super("Compare Menu");
   this.buildingName = buildingName;
   this.readingDate = readingDate;
   this.floor_Tenant = floor_Tenant;
   this.isLatestMonth = isLatestMonth;
+  this.httpService = httpService;
   
 //Readings for current month  
 //if it is Latest Month, call this method which gets data from Temporary storage of server
   if(isLatestMonth)
-	  currentMonthData = HttpService.getTenantReadingsFromTempo(buildingName);
+	  currentMonthData = httpService.getTenantReadingsFromTempo(buildingName);
 //if its is not Latest Month,call this method which gets data from DB
   else {
 	  String currMonth = String.format("%4d-%02d-01",readingDate.getYear(),readingDate.getMonthValue());
-	  currentMonthData = HttpService.getTenantReadings(buildingName, currMonth);
+	  currentMonthData = httpService.getTenantReadings(buildingName, currMonth);
   }
 String prevMonth = String.format("%4d-%02d-01",readingDate.getYear(),readingDate.minusMonths(1).getMonthValue());
 //Readings for previous month
-prevMonthData = HttpService.getTenantReadings(buildingName, prevMonth);
+prevMonthData = httpService.getTenantReadings(buildingName, prevMonth);
 
 //converting to twoMonthBefore String
 String twoMonthBefore = String.format("%4d-%02d-01",readingDate.getYear(),readingDate.minusMonths(2).getMonthValue());
 //Readings for two months before
-twoMonthBeforeData = HttpService.getTenantReadings(buildingName, twoMonthBefore);
+twoMonthBeforeData = httpService.getTenantReadings(buildingName, twoMonthBefore);
 
 //converting to prevYear String
 String prevYear = String.format("%4d-%02d-01",readingDate.minusYears(1).getYear(),readingDate.getMonthValue());
 //Readings for previous year same month
-prevYearSameMonthData = HttpService.getTenantReadings(buildingName, prevYear);
+prevYearSameMonthData = httpService.getTenantReadings(buildingName, prevYear);
 //Readings for previous year previous month
 String prevYearPrevMonth = String.format("%4d-%02d-01",readingDate.minusYears(1).getYear(),readingDate.minusMonths(1).getMonthValue());
-prevYearPrevMonthData = HttpService.getTenantReadings(buildingName, prevYearPrevMonth);
+prevYearPrevMonthData = httpService.getTenantReadings(buildingName, prevYearPrevMonth);
 
 commentData = new LinkedHashMap<>();
 //*********************Calculation Part*************************************
@@ -151,8 +151,12 @@ commentData = new LinkedHashMap<>();
  JMenu fileMenu = new JMenu("File");
  JMenuItem saveMenu = new JMenuItem("Save");
  JMenuItem approveMenu = new JMenuItem("Approve");
+ JMenuItem finalApproveMenu = new JMenuItem("Final Approve");
+ JMenuItem logout = new JMenuItem("Logout");
  fileMenu.add(saveMenu);
  fileMenu.add(approveMenu);
+ fileMenu.add(finalApproveMenu);
+ fileMenu.add(logout);
  menuBar.add(fileMenu);
  setJMenuBar(menuBar);
  
@@ -168,8 +172,8 @@ commentData = new LinkedHashMap<>();
      if(choice == JOptionPane.YES_OPTION) {
      	//will save all the comments to TempMap or server
      	
-     	HttpService.storeComments(commentData, buildingName);
-     	MainMenu.main(new String[0]);
+     	httpService.storeComments(commentData, buildingName);
+     	MainMenu mainMenu = new MainMenu(httpService);
 		 this.dispose();
      }
      else {}
@@ -188,13 +192,49 @@ commentData = new LinkedHashMap<>();
 	     if(choice == JOptionPane.YES_OPTION) {
 	     	//will invoke a method inside spring controller to save data from TempMap to DB
 	     	
-	     	HttpService.approve(buildingName,String.format("%4d-%02d-01",readingDate.getYear(),readingDate.getMonthValue()));
-	     	MainMenu.main(new String[0]);
+	     	httpService.approve(buildingName,String.format("%4d-%02d-01",readingDate.getYear(),readingDate.getMonthValue()));
+	     	new MainMenu(httpService);
 			 this.dispose();
 	     }
 	     else {}
 		 
 	 });
+ 
+ if(!isLatestMonth) approveMenu.setEnabled(false);
+ finalApproveMenu.addActionListener((ActionEvent ae)->{
+	 
+		//Creating a confirmation dialog box before moving to MM01
+			ImageIcon decorativeIcon = new ImageIcon("resources/images/ask.png");
+			Image decorativeImage = decorativeIcon.getImage();
+			decorativeIcon = new ImageIcon(decorativeImage.getScaledInstance(50, 50, Image.SCALE_SMOOTH));
+
+	     int choice = JOptionPane.showConfirmDialog(null,"Would you like to approve the data?", "Confirmation", JOptionPane.YES_NO_OPTION,JOptionPane.QUESTION_MESSAGE,decorativeIcon);
+			
+	     if(choice == JOptionPane.YES_OPTION) {
+	     	//will invoke a method inside spring controller to save data from TempMap to DB
+	     	
+	     	httpService.finalApprove(buildingName,String.format("%4d-%02d-01",readingDate.getYear(),readingDate.getMonthValue()));
+	     	new MainMenu(httpService);
+			 this.dispose();
+	     }
+	     else {}
+		 
+	 });
+ logout.addActionListener((ActionEvent ae)->{
+		
+	    //Creating a confirmation dialog box before moving to CS01
+		ImageIcon decorativeIcon = new ImageIcon("resources/images/ask.png");
+		Image decorativeImage = decorativeIcon.getImage();
+		decorativeIcon = new ImageIcon(decorativeImage.getScaledInstance(50, 50, Image.SCALE_SMOOTH));
+		
+		int choice = JOptionPane.showConfirmDialog(null,"Do you want to logout?", "Logout", JOptionPane.YES_NO_OPTION,JOptionPane.QUESTION_MESSAGE,decorativeIcon);
+				
+		if(choice == JOptionPane.YES_OPTION) {
+		   httpService.logoutMethod();
+		   new LoginPage();
+		   this.dispose();
+		}
+});
 
 buildingLabel = new JLabel(buildingName);
 buildingLabel.setBounds(500,20,200,30);
@@ -442,7 +482,7 @@ refreshPage(floor_Tenant.get(floor_TenantIndex));
 				Double prevYearSameMonthReadngBeforeChange = prevYearSameMonthData.get(floor_tenantName).getReadingBeforeChange(i);
 				Double prevYearPrevMonthReadingBeforeChange = prevYearPrevMonthData.get(floor_tenantName).getReadingBeforeChange(i);
 				
-				//Setting datas to the table
+				//Setting data to the table
 				Double currentMonthUsage;
 				if(currentMonthReadingBeforeChange!=0)
 				currentMonthUsage = (currentMonthReading+currentMonthReadingBeforeChange)-(prevMonthReading+prevMonthReadingBeforeChange);
@@ -478,7 +518,7 @@ refreshPage(floor_Tenant.get(floor_TenantIndex));
 				lb[3+(5*i)].setText(String.format("%.2f",previousYearUsage));
 				lb[4+(5*i)].setText(String.format("%d%%", prevYearCompare));
 				
-				if(prevYearCompare < 0 || prevYearCompare > 150) {
+				if(prevYearCompare < 50 || prevYearCompare > 150) {
 					
 					lb[4+(5*i)].setForeground(Color.red);
 				}

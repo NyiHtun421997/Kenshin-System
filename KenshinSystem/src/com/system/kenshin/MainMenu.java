@@ -23,6 +23,9 @@ import javax.swing.ImageIcon;
 import javax.swing.JButton;
 import javax.swing.JFrame;
 import javax.swing.JLabel;
+import javax.swing.JMenu;
+import javax.swing.JMenuBar;
+import javax.swing.JMenuItem;
 import javax.swing.JOptionPane;
 import javax.swing.SwingConstants;
 
@@ -39,13 +42,36 @@ public class MainMenu extends JFrame implements ActionListener,CallBack{
 	private List<String> floor = new ArrayList<String>();
 	private LinkedHashMap<String,FloorReading> floorReadingsMap;
 	private ReadingOperation operationForAE;
+	private final HttpService httpService;
 	
-	MainMenu(){
+	MainMenu(HttpService httpService){
 		
 		super("Main Menu");
+		this.httpService = httpService;
 		setLayout(null);
 		Container contentPane = this.getContentPane();
-		buildingName = HttpService.getBuildings();
+		buildingName = httpService.getBuildings();
+		JMenuBar menuBar = new JMenuBar();
+		JMenu fileMenu = new JMenu("File");
+		JMenuItem logout = new JMenuItem("Logout");
+		fileMenu.add(logout);
+		menuBar.add(fileMenu);
+		setJMenuBar(menuBar);
+		logout.addActionListener((ActionEvent ae)->{
+			
+		    //Creating a confirmation dialog box before moving to CS01
+			ImageIcon decorativeIcon = new ImageIcon("resources/images/ask.png");
+			Image decorativeImage = decorativeIcon.getImage();
+			decorativeIcon = new ImageIcon(decorativeImage.getScaledInstance(50, 50, Image.SCALE_SMOOTH));
+			
+			int choice = JOptionPane.showConfirmDialog(null,"Do you want to logout?", "Logout", JOptionPane.YES_NO_OPTION,JOptionPane.QUESTION_MESSAGE,decorativeIcon);
+					
+			if(choice == JOptionPane.YES_OPTION) {
+			   httpService.logoutMethod();
+			   new LoginPage();
+			   this.dispose();
+			}
+	});
 		
 		dateJLabel = new JLabel(dateConverter(readingDate));//must follow this ○年○月 pattern
 		dateJLabel.setBounds(405,20,120,40);
@@ -108,16 +134,21 @@ public class MainMenu extends JFrame implements ActionListener,CallBack{
 		contentPane.add(buildingButton);
 		contentPane.add(buildingLabel2);
 		contentPane.setBackground(new Color(237, 244, 255));
+		
+		setSize(900,500);
+		setVisible(true);
+		setResizable(false);
+		setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
 	}
 	@Override
 	public void actionPerformed(ActionEvent ae) {
 		String currentBuildingLabel = buildingLabel2.getText();
 		if(ae.getSource()==inputButton) {
 			if(currentBuildingLabel!="") {
-				if(!HttpService.checkForBuilding(currentBuildingLabel)) {
+				if(!httpService.checkForBuilding(currentBuildingLabel)) {
 
-					floor = HttpService.getFloorListForBld(currentBuildingLabel);
-					new InputScreen(currentBuildingLabel,readingDate,floor);
+					floor = httpService.getFloorListForBld(currentBuildingLabel);
+					new InputScreen(currentBuildingLabel,readingDate,floor,httpService);
 					this.dispose();
 				}
 				else throw new CustomException("Data for this building is already being created.");
@@ -143,16 +174,16 @@ public class MainMenu extends JFrame implements ActionListener,CallBack{
 		        int choice = JOptionPane.showConfirmDialog(null,"Do you want to check data for Latest Month?", "Confirmation", JOptionPane.YES_NO_OPTION,JOptionPane.QUESTION_MESSAGE,decorativeIcon);	
 		        if(choice == JOptionPane.YES_OPTION) {
 		        	//call HttpService method to get LinkedHashMap data for readings
-		        	floorReadingsMap = HttpService.getFloorReadingsFromTempo(currentBuildingLabel);
+		        	floorReadingsMap = httpService.getFloorReadingsFromTempo(currentBuildingLabel);
 		        	operationForAE = new Operation(floorReadingsMap,true);
-		        	floor = HttpService.getFloorListForBld(currentBuildingLabel);
+		        	floor = httpService.getFloorListForBld(currentBuildingLabel);
 		        	//move to CH01
-		        	new CheckMenu(operationForAE,currentBuildingLabel,readingDate,floor);
+		        	new CheckMenu(operationForAE,currentBuildingLabel,readingDate,floor,httpService);
 		        	this.dispose();
 		        }else {
 		        	//let user chooses Month
 		        	//call HttpService method to get a list of reading dates for a building
-					List<String> readingDateList = HttpService.getReadingDatesForBuilding(currentBuildingLabel);
+					List<String> readingDateList = httpService.getReadingDatesForBuilding(currentBuildingLabel);
 					new ChoiceMenu(readingDateList,this,checkButton);
 					//this = an instance of input screen frame who implements CallBack interface and acts as observer and will be observing it's subject,choiceMenu
 		        }
@@ -167,11 +198,7 @@ public class MainMenu extends JFrame implements ActionListener,CallBack{
 			@Override
 			public void run() {
 			try {
-				MainMenu mMenu = new MainMenu();
-				mMenu.setSize(900,500);
-				mMenu.setVisible(true);
-				mMenu.setResizable(false);
-				mMenu.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
+				MainMenu mMenu = new MainMenu(new HttpService(new TokenManager("")));
 } 
 			catch (Exception e) {
 					e.printStackTrace();
@@ -203,7 +230,7 @@ public class MainMenu extends JFrame implements ActionListener,CallBack{
 		//componentText will accept the text of the button which was clicked on BM01
 		if(b == buildingButton) {
 			buildingLabel2.setText(componentText);
-			readingDate = HttpService.getLatestDate(componentText);
+			readingDate = httpService.getLatestDate(componentText);
 			dateJLabel.setText(dateConverter(readingDate));
 		}
 		if(b == checkButton) {
@@ -221,11 +248,11 @@ public class MainMenu extends JFrame implements ActionListener,CallBack{
 	             LocalDate date = LocalDate.parse(componentText, formatter);
 	             
 	        	//call HttpService method to get LinkedHashMap data for readings
-	        	floorReadingsMap = HttpService.getFloorReadings(currentBuildingLabel, componentText);
+	        	floorReadingsMap = httpService.getFloorReadings(currentBuildingLabel, componentText);
 	        	operationForAE = new Operation(floorReadingsMap,false);
-	        	floor = HttpService.getFloorListForBld(currentBuildingLabel);
+	        	floor = httpService.getFloorListForBld(currentBuildingLabel);
 	        	//move to CH01
-	        	new CheckMenu(operationForAE,currentBuildingLabel,date,floor);
+	        	new CheckMenu(operationForAE,currentBuildingLabel,date,floor,httpService);
 	        	this.dispose();
 	        }
 	        else {}		

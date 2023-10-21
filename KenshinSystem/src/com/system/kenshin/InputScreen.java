@@ -3,7 +3,6 @@ package com.system.kenshin;
 import java.awt.BorderLayout;
 import java.awt.CardLayout;
 import java.awt.Color;
-import java.awt.Component;
 import java.awt.Container;
 import java.awt.Dimension;
 import java.awt.EventQueue;
@@ -20,11 +19,9 @@ import java.awt.event.WindowAdapter;
 import java.awt.event.WindowEvent;
 import java.awt.image.BufferedImage;
 import java.io.BufferedInputStream;
-import java.io.BufferedOutputStream;
 import java.io.ByteArrayInputStream;
 import java.io.File;
 import java.io.FileInputStream;
-import java.io.FileOutputStream;
 import java.io.IOException;
 import java.text.DecimalFormat;
 import java.text.NumberFormat;
@@ -33,8 +30,6 @@ import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Locale;
-import java.util.Map.Entry;
-
 import javax.imageio.ImageIO;
 import javax.swing.BorderFactory;
 import javax.swing.ImageIcon;
@@ -58,14 +53,14 @@ import org.ehcache.Cache;
 
 public class InputScreen {
 	
-	public InputScreen(String buildingName, LocalDate readingDate, List<String> floor) {
+	public InputScreen(String buildingName, LocalDate readingDate, List<String> floor, HttpService httpService) {
 	  
 		EventQueue.invokeLater(new Runnable() {
 			@Override
 			public void run() {
 			try {
 				ReadingOperation operationForAE = new Operation();	
-				InputScreenFrame f = new InputScreenFrame(operationForAE,buildingName,readingDate,floor);
+				InputScreenFrame f = new InputScreenFrame(operationForAE,buildingName,readingDate,floor,httpService);
 				f.setSize(1200,800);
 				f.setVisible(true);
 				f.setResizable(false);
@@ -89,7 +84,7 @@ public class InputScreen {
 			public void run() {
 			try {
 				ReadingOperation operationForAE = new Operation();	
-				InputScreenFrame f = new InputScreenFrame(operationForAE,buildingName,readingDate,floor);
+				InputScreenFrame f = new InputScreenFrame(operationForAE,buildingName,readingDate,floor,new HttpService(new TokenManager("")));
 				f.setSize(1200,800);
 				f.setVisible(true);
 				f.setResizable(false);
@@ -103,7 +98,7 @@ class InputScreenFrame extends JFrame implements ItemListener,ActionListener,Cal
 	
 	JPanel topPanel,bottomPanel1,bottomPanel2,mainBottomPanel,imageCboxPanel;
 	JButton b2,b3,b4,b5,b6,b7;
-	JLabel b1,l1,l2,photo,cboxLabel;
+	JLabel b1,l1,l2,photo,cboxLabel,unitLabel;
 	JComboBox cb;
 	JFormattedTextField tf,tfOptional;
 	JCheckBox cbox,newMeterCBox;
@@ -113,13 +108,15 @@ class InputScreenFrame extends JFrame implements ItemListener,ActionListener,Cal
 	private String buildingName;
 	private LocalDate readingDate;
 	private List<String> floor;
+	private final HttpService httpService;
 	
 	private String unitType [] = {"電灯","動力","水道","ガス"};
+	private String electricUnit = "kWh", volumeUnit = "m3";
 	private ReadingOperation operationForAE;
 	
 	private int floorIndex = 0;
 	
-	InputScreenFrame(ReadingOperation operationForAE,String buildingName, LocalDate readingDate, List<String> floor){
+	InputScreenFrame(ReadingOperation operationForAE,String buildingName, LocalDate readingDate, List<String> floor, HttpService httpService){
 		super("Input Menu");
 		Container contentPane = this.getContentPane();
 		contentPane.setLayout(new BorderLayout());
@@ -128,22 +125,39 @@ class InputScreenFrame extends JFrame implements ItemListener,ActionListener,Cal
 		this.buildingName = buildingName;
 		this.readingDate = readingDate;
 		this.floor = floor;
+		this.httpService = httpService;
 		imageCache = new ImageCache();
 		//once the input menu is opened,operation will be constructed
 		operationForAE.startOperation(buildingName, readingDate, floor);
 		
 		JMenuBar menuBar = new JMenuBar();
 		JMenu fileMenu = new JMenu("File");
-		JMenuItem saveMenu = new JMenuItem("Save");
-		fileMenu.add(saveMenu);
+		JMenuItem nextMenu = new JMenuItem("Next");
+		JMenuItem tempSave = new JMenuItem("Save");
+		JMenuItem logout = new JMenuItem("Logout");
+		fileMenu.add(tempSave);
+		fileMenu.add(nextMenu);
+		fileMenu.add(logout);
 		menuBar.add(fileMenu);
 		menuBar.setBackground(Color.blue);
 		
 		setJMenuBar(menuBar);
 		//Action to save all the obj inside HashMap to TempMap inside Server
-		saveMenu.addActionListener((ActionEvent ae)->{
+		tempSave.addActionListener((ActionEvent ae)->{
 			
-			HttpService.storeToTempMap(operationForAE.getAllReadings());
+			//Creating a confirmation dialog box before moving to CS01
+			ImageIcon decorativeIcon = new ImageIcon("resources/images/ask.png");
+			Image decorativeImage = decorativeIcon.getImage();
+			decorativeIcon = new ImageIcon(decorativeImage.getScaledInstance(50, 50, Image.SCALE_SMOOTH));
+	
+	        int choice = JOptionPane.showConfirmDialog(null,"Do you want to save the readings?", "Confirmation", JOptionPane.YES_NO_OPTION,JOptionPane.QUESTION_MESSAGE,decorativeIcon);
+			
+	        if(choice == JOptionPane.YES_OPTION) {
+	        	httpService.storeToTempMap(operationForAE.getAllReadings());
+	        }
+		});
+	        nextMenu.addActionListener((ActionEvent ae)->{
+			
 			//Creating a confirmation dialog box before moving to CS01
 			ImageIcon decorativeIcon = new ImageIcon("resources/images/ask.png");
 			Image decorativeImage = decorativeIcon.getImage();
@@ -152,12 +166,13 @@ class InputScreenFrame extends JFrame implements ItemListener,ActionListener,Cal
 	        int choice = JOptionPane.showConfirmDialog(null,"Do you want to proceed to Compare Screen?", "Confirmation", JOptionPane.YES_NO_OPTION,JOptionPane.QUESTION_MESSAGE,decorativeIcon);
 			
 	        if(choice == JOptionPane.YES_OPTION) {
+	        	httpService.storeToTempMap(operationForAE.getAllReadings());
 	        	//will save all the image files inside app's directory to server and delete them
 	        	try{
 	        		Iterator<Cache.Entry<String, byte[]>> iterator = imageCache.getImageCache().iterator();
 	        		while(iterator.hasNext()) {
 	        			Cache.Entry<String, byte[]> entry = iterator.next();
-	        			HttpService.storeImages(entry.getKey(),entry.getValue());
+	        			httpService.storeImages(entry.getKey(),entry.getValue());
 	        		}
 	        	}
 	        	catch(IOException ie) {
@@ -172,11 +187,26 @@ class InputScreenFrame extends JFrame implements ItemListener,ActionListener,Cal
 	        		imageCache.getCacheManager().close();
 	        	}
 	        	//after saving close this window and jump to CS01
-				new CompareScreen(buildingName,readingDate,true);
+				new CompareScreen(buildingName,readingDate,true,httpService);
 				this.dispose();
 	        }
 	        else {}		
-		});
+	});
+	logout.addActionListener((ActionEvent ae)->{
+				
+	    //Creating a confirmation dialog box before moving to CS01
+		ImageIcon decorativeIcon = new ImageIcon("resources/images/ask.png");
+		Image decorativeImage = decorativeIcon.getImage();
+		decorativeIcon = new ImageIcon(decorativeImage.getScaledInstance(50, 50, Image.SCALE_SMOOTH));
+		
+		int choice = JOptionPane.showConfirmDialog(null,"Do you want to logout?", "Logout", JOptionPane.YES_NO_OPTION,JOptionPane.QUESTION_MESSAGE,decorativeIcon);
+				
+		if(choice == JOptionPane.YES_OPTION) {
+		   httpService.logoutMethod();
+		   new LoginPage();
+		   this.dispose();
+		}
+});
 			
 		//Label for buildings
 		b1 = new JLabel(buildingName);
@@ -265,12 +295,15 @@ class InputScreenFrame extends JFrame implements ItemListener,ActionListener,Cal
 							}
 							catch(	NumberFormatException e) { evt.consume();}
 		}}});
+		//kWh label
+		unitLabel = new JLabel(electricUnit);
+		unitLabel.setBounds(705,95,50,50);
+		unitLabel.setHorizontalAlignment(SwingConstants.CENTER);
 				
 		//CheckBox for whether upload image or not
 		newMeterCBox = new JCheckBox("New Meter",false);
 		newMeterCBox.setBounds(757,100,200,30);
 		newMeterCBox.addItemListener(this);
-		
 		
 		//Buttons for increment/decrement of floors
 		b3 = new JButton("UP");
@@ -294,6 +327,7 @@ class InputScreenFrame extends JFrame implements ItemListener,ActionListener,Cal
 		topPanel.add(b4);
 		topPanel.add(cb);
 		topPanel.add(tf);
+		topPanel.add(unitLabel);
 		topPanel.add(tfOptional);
 		topPanel.add(newMeterCBox);
 		topPanel.add(l1);
@@ -422,6 +456,10 @@ class InputScreenFrame extends JFrame implements ItemListener,ActionListener,Cal
 				tfOptional.setText("");
 			}
 			updatePhoto();
+			//Changing display unit
+			if(cb.getSelectedIndex()==0 || cb.getSelectedIndex()==1)
+				unitLabel.setText(electricUnit);
+			else unitLabel.setText(volumeUnit);
 		}
 		//if up button is pressed
 		if(ae.getSource()==b3) {

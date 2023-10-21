@@ -56,19 +56,13 @@ import org.ehcache.Cache;
 
 public class CheckMenu {
 	
-	public static void main(String[] args) {
-		String buildingName = "Sample Building C";
-		LocalDate readingDate = LocalDate.of(2023, 11, 1);//must follow this ○年○月 pattern
-		//will be populated from server
-		List<String> floor = new ArrayList<String>(List.of("1F","2F","3F"));
+	public CheckMenu(ReadingOperation operationForAE, String buildingName, LocalDate readingDate, List<String> floor, HttpService httpService) {
 		
 		EventQueue.invokeLater(new Runnable() {
 			@Override
 			public void run() {
 				try {
-					ReadingOperation operationForAE = new Operation();
-					operationForAE.startOperation(buildingName, readingDate, floor);
-					CheckMenuFrame f = new CheckMenuFrame(operationForAE,buildingName,readingDate,floor);
+					CheckMenuFrame f = new CheckMenuFrame(operationForAE,buildingName,readingDate,floor,httpService);
 					f.setSize(1200,800);
 					f.setVisible(true);
 					f.setResizable(false);
@@ -77,29 +71,34 @@ public class CheckMenu {
 				catch (Exception e) {
 						e.printStackTrace();
 }}});}
-
+public static void main(String[] args) {
+	String buildingName = "Orix Building";
+	LocalDate readingDate = LocalDate.of(2023, 10, 1);//must follow this ○年○月 pattern
+	HttpService httpService = new HttpService(new TokenManager("eyJhbGciOiJIUzI1NiJ9.eyJzdWIiOiJueWlodHV1bkBnbWFpbC5jb20iLCJpYXQiOjE2OTc4ODY0NzksImV4cCI6MTY5Nzg5NzI3OX0.oOz2ysmy12ZMmwiy17dQ2yCWXOcPTtxgYPQx-wkM-08"));
+	//will be populated from server
+	List<String> floor = httpService.getFloorListForBld(buildingName);
 	
-	public CheckMenu(ReadingOperation operationForAE, String buildingName, LocalDate readingDate, List<String> floor) {
-		
-		EventQueue.invokeLater(new Runnable() {
-			@Override
-			public void run() {
-				try {
-					CheckMenuFrame f = new CheckMenuFrame(operationForAE,buildingName,readingDate,floor);
-					f.setSize(1200,800);
-					f.setVisible(true);
-					f.setResizable(false);
-					f.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
-	} 
-				catch (Exception e) {
-						e.printStackTrace();
-}}});}}
-	
+	EventQueue.invokeLater(new Runnable() {
+		@Override
+		public void run() {
+			try {
+				ReadingOperation operationForAE = new Operation();
+				operationForAE.startOperation(buildingName, readingDate, floor);
+				CheckMenuFrame f = new CheckMenuFrame(operationForAE,buildingName,readingDate,floor,httpService);
+				f.setSize(1200,800);
+				f.setVisible(true);
+				f.setResizable(false);
+				f.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
+} 
+			catch (Exception e) {
+					e.printStackTrace();
+}}});}
+}	
 	class CheckMenuFrame extends JFrame implements ItemListener,ActionListener,CallBack{
 		
 		JPanel topPanel,bottomPanel;
 		JButton b2,b3,b4,b5,photo;
-		JLabel b1,l1,l2,cboxLabel,commentLabel;
+		JLabel b1,l1,l2,cboxLabel,commentLabel,unitLabel;
 		JComboBox cb;
 		JFormattedTextField tf,tfOptional;
 		JCheckBox newMeterCBox;
@@ -109,13 +108,15 @@ public class CheckMenu {
 		private String buildingName;
 		private LocalDate readingDate;
 		private List<String> floor;
+		private final HttpService httpService;
 		
 		private String unitType [] = {"電灯","動力","水道","ガス"};
+		private String electricUnit = "kWh", volumeUnit = "m3";
 		private ReadingOperation operationForAE;
 		
 		private int floorIndex = 0;
 		
-		CheckMenuFrame(ReadingOperation operationForAE,String buildingName, LocalDate readingDate, List<String> floor){
+		CheckMenuFrame(ReadingOperation operationForAE,String buildingName, LocalDate readingDate, List<String> floor, HttpService httpService){
 			super("Check Menu");
 			Container contentPane = this.getContentPane();
 			contentPane.setLayout(new BorderLayout());
@@ -124,24 +125,42 @@ public class CheckMenu {
 			this.buildingName = buildingName;
 			this.readingDate = readingDate;
 			this.floor = floor;
+			this.httpService = httpService;
 			imageCache = new ImageCache();
 			
 			JMenuBar menuBar = new JMenuBar();
 			JMenu fileMenu = new JMenu("File");
-			JMenuItem saveMenu = new JMenuItem("Save");
-			fileMenu.add(saveMenu);
+			JMenuItem tempSave = new JMenuItem("Save");
+			JMenuItem nextMenu = new JMenuItem("Next");
+			JMenuItem logout = new JMenuItem("Logout");
+			fileMenu.add(tempSave);
+			fileMenu.add(nextMenu);
+			fileMenu.add(logout);
 			menuBar.add(fileMenu);
 			menuBar.setBackground(Color.blue);
 			
 			setJMenuBar(menuBar);
-			saveMenu.addActionListener((ActionEvent ae)->{
-				//call storeToTempMap method for lastetMonth
-				if(operationForAE.isLatestMonth())
-					HttpService.storeToTempMap(operationForAE.getAllReadings());
-				//call HttpService method to update DB for non-latestMonths
-				else {
-					HttpService.updateReadings(buildingName,String.format("%4d-%02d-01", readingDate.getYear(), readingDate.getMonthValue()) , floor.get(floorIndex), operationForAE.getAllReadings());
-				}			
+			tempSave.addActionListener((ActionEvent ae)->{
+						
+				//Creating a confirmation dialog box before moving to CS01
+				ImageIcon decorativeIcon = new ImageIcon("resources/images/ask.png");
+				Image decorativeImage = decorativeIcon.getImage();
+				decorativeIcon = new ImageIcon(decorativeImage.getScaledInstance(50, 50, Image.SCALE_SMOOTH));
+		
+		        int choice = JOptionPane.showConfirmDialog(null,"Do you want to save the readings?", "Confirmation", JOptionPane.YES_NO_OPTION,JOptionPane.QUESTION_MESSAGE,decorativeIcon);
+				
+		        if(choice == JOptionPane.YES_OPTION) {
+		        	//call storeToTempMap method for lastetMonth
+					if(operationForAE.isLatestMonth())
+						httpService.storeToTempMap(operationForAE.getAllReadings());
+					//call HttpService method to update DB for non-latestMonths
+					else {
+						httpService.updateReadings(buildingName,String.format("%4d-%02d-01", readingDate.getYear(), readingDate.getMonthValue()) , floor.get(floorIndex), operationForAE.getAllReadings());
+					}	
+		        }
+			});
+			nextMenu.addActionListener((ActionEvent ae)->{
+				
 				//Creating a confirmation dialog box before moving to CS01
 				ImageIcon decorativeIcon = new ImageIcon("resources/images/ask.png");
 				Image decorativeImage = decorativeIcon.getImage();
@@ -152,10 +171,11 @@ public class CheckMenu {
 		        if(choice == JOptionPane.YES_OPTION) {
 		        	//will save all the image files inside app's directory to server and delete them
 		        	try{
+		        		httpService.storeToTempMap(operationForAE.getAllReadings());
 		        		Iterator<Cache.Entry<String, byte[]>> iterator = imageCache.getImageCache().iterator();
 		        		while(iterator.hasNext()) {
 		        			Cache.Entry<String, byte[]> entry = iterator.next();
-		        			HttpService.updateImages(entry.getKey(),entry.getValue());
+		        			httpService.updateImages(entry.getKey(),entry.getValue());
 		        		}
 		        	}
 		        	catch(IOException e) {
@@ -171,13 +191,28 @@ public class CheckMenu {
 		        	}
 		        	//after saving close this window and jump to CS01
 		        	if(operationForAE.isLatestMonth())
-						new CompareScreen(buildingName,readingDate,true);
+						new CompareScreen(buildingName,readingDate,true,httpService);
 					else
-						new CompareScreen(buildingName,readingDate,false);
+						new CompareScreen(buildingName,readingDate,false,httpService);
 					this.dispose();
 		        }
 		        else {}
 				
+			});
+			logout.addActionListener((ActionEvent ae)->{
+				
+			    //Creating a confirmation dialog box before moving to CS01
+				ImageIcon decorativeIcon = new ImageIcon("resources/images/ask.png");
+				Image decorativeImage = decorativeIcon.getImage();
+				decorativeIcon = new ImageIcon(decorativeImage.getScaledInstance(50, 50, Image.SCALE_SMOOTH));
+				
+				int choice = JOptionPane.showConfirmDialog(null,"Do you want to logout?", "Logout", JOptionPane.YES_NO_OPTION,JOptionPane.QUESTION_MESSAGE,decorativeIcon);
+						
+				if(choice == JOptionPane.YES_OPTION) {
+				   httpService.logoutMethod();
+				   new LoginPage();
+				   this.dispose();
+				}
 			});
 			
 			//Label for buildings
@@ -266,6 +301,10 @@ public class CheckMenu {
 								}
 								catch(	NumberFormatException e) { evt.consume();}
 			}}});
+			//kWh label
+			unitLabel = new JLabel(electricUnit);
+			unitLabel.setBounds(705,95,50,50);
+			unitLabel.setHorizontalAlignment(SwingConstants.CENTER);
 					
 			//CheckBox for whether upload image or not
 			newMeterCBox = new JCheckBox("New Meter",false);
@@ -301,6 +340,7 @@ public class CheckMenu {
 			topPanel.add(b4);
 			topPanel.add(cb);
 			topPanel.add(tf);
+			topPanel.add(unitLabel);
 			topPanel.add(tfOptional);
 			topPanel.add(newMeterCBox);
 			topPanel.add(l1);
@@ -395,6 +435,10 @@ public class CheckMenu {
 				}
 				
 				updatePhoto();
+				//Changing display unit
+				if(cb.getSelectedIndex()==0 || cb.getSelectedIndex()==1)
+					unitLabel.setText(electricUnit);
+				else unitLabel.setText(volumeUnit);
 			}
 			//if up button is pressed
 			if(ae.getSource()==b3) {
@@ -525,7 +569,7 @@ public class CheckMenu {
 			if(!imageCache.getImageCache().containsKey(fileName)) {
 				//call HttpService method to look for the image with this unique file name in DB
 				try {
-					byte[] imageData = HttpService.getImages(fileName);
+					byte[] imageData = httpService.getImages(fileName);
 					if(imageData!=null) {
 						imageCache.getImageCache().put(fileName, imageData);
 					}
@@ -588,7 +632,6 @@ public class CheckMenu {
 				commentBox.setText(comment);
 			}
 			else commentBox.setText("");
-			
 			updatePhoto();
 		}
 	}

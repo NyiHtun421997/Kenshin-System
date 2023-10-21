@@ -30,12 +30,19 @@ import com.fasterxml.jackson.datatype.jsr310.*;
 
 public class HttpService {
 	
-private static HttpResponse<String> getMethod(String uri) {
+private final TokenManager tokenManager;
+	
+public HttpService(TokenManager tokenManager) {
+        this.tokenManager = tokenManager;
+}
+	
+private  HttpResponse<String> getMethod(String uri) {
 		
 		HttpClient client = HttpClient.newHttpClient();
 		HttpResponse<String> response;
 		try {
 			HttpRequest request = HttpRequest.newBuilder()
+									.header("Authorization", "Bearer "+tokenManager.getToken())
 									.uri(URI.create(uri))
 									.GET()
 									.build();
@@ -47,7 +54,7 @@ private static HttpResponse<String> getMethod(String uri) {
 			throw new CustomException(e);
 		}
 	}
-private static HttpResponse<String> postMethod(String uri,Object object) {
+private  HttpResponse<String> postMethod(String uri,Object object) {
 		
 		HttpClient client = HttpClient.newHttpClient();
 		HttpResponse<String> response;
@@ -60,6 +67,7 @@ private static HttpResponse<String> postMethod(String uri,Object object) {
 			System.out.println(json);
 			HttpRequest request = HttpRequest.newBuilder()
 									.header("Content-Type", "application/json")
+									.header("Authorization", "Bearer "+tokenManager.getToken())
 									.uri(URI.create(uri))
 									.POST(HttpRequest.BodyPublishers.ofString(json))
 									.build();
@@ -71,7 +79,7 @@ private static HttpResponse<String> postMethod(String uri,Object object) {
 			throw new CustomException(e);
 		}		
 	}
-private static HttpResponse<String> putMethod(String uri,Object object) {
+private  HttpResponse<String> putMethod(String uri,Object object) {
 	
 	HttpClient client = HttpClient.newHttpClient();
 	HttpResponse<String> response;
@@ -84,6 +92,7 @@ private static HttpResponse<String> putMethod(String uri,Object object) {
 		System.out.println(json);
 		HttpRequest request = HttpRequest.newBuilder()
 								.header("Content-Type", "application/json")
+								.header("Authorization", "Bearer "+tokenManager.getToken())
 								.uri(URI.create(uri))
 								.PUT(HttpRequest.BodyPublishers.ofString(json))
 								.build();
@@ -96,7 +105,7 @@ private static HttpResponse<String> putMethod(String uri,Object object) {
 	}		
 }
 	
-public static List<String> getBuildings() {
+public  List<String> getBuildings() {
 		
 		List<String> buildingName = new ArrayList<>();
 
@@ -123,7 +132,7 @@ public static List<String> getBuildings() {
 		}
 	}
 	
-public static LocalDate getLatestDate(String buildingName) {
+public  LocalDate getLatestDate(String buildingName) {
 		
 		try {
             String encodedBuildingName = URLEncoder.encode(buildingName, "UTF-8");
@@ -147,7 +156,7 @@ public static LocalDate getLatestDate(String buildingName) {
 		}
 	}
 
-public static List<String> getReadingDatesForBuilding(String buildingName){
+public  List<String> getReadingDatesForBuilding(String buildingName){
 	try {
 		String encodedBuildingName = URLEncoder.encode(buildingName,"UTF-8");
 		HttpResponse<String> response = getMethod("http://localhost:8080/api/kenshin/central/reading_dates?building_name="+encodedBuildingName);
@@ -169,7 +178,7 @@ public static List<String> getReadingDatesForBuilding(String buildingName){
 	}
 }
 	
-public static List<String> getFloorListForBld(String buildingName){
+public  List<String> getFloorListForBld(String buildingName){
 	
 	List<String> floor = new ArrayList<>();
 	try {
@@ -194,7 +203,7 @@ public static List<String> getFloorListForBld(String buildingName){
 	}
 }
 
-public static List<String> getTenantListForBld(String buildingName){
+public  List<String> getTenantListForBld(String buildingName){
 	
 	List<String> tenants = new ArrayList<>();
 	try {
@@ -218,7 +227,7 @@ public static List<String> getTenantListForBld(String buildingName){
 		throw new CustomException(e);
 	}
 }
-public static void storeToTempMap(LinkedHashMap<String,FloorReading> floorReadingsMap) {
+public  void storeToTempMap(LinkedHashMap<String,FloorReading> floorReadingsMap) {
 	
 	for(String x: floorReadingsMap.keySet()) {
 		//loop through each reading obj inside HashMap and call post method for each obj
@@ -226,7 +235,7 @@ public static void storeToTempMap(LinkedHashMap<String,FloorReading> floorReadin
 	}
 }
 //method to update readings from DB
-public static void updateReadings(String buildingName,String dateLabel,String floorName,LinkedHashMap<String,FloorReading> floorReadingsMap) {
+public  void updateReadings(String buildingName,String dateLabel,String floorName,LinkedHashMap<String,FloorReading> floorReadingsMap) {
 	for(String x: floorReadingsMap.keySet()) {
 		
 		try {
@@ -245,7 +254,7 @@ public static void updateReadings(String buildingName,String dateLabel,String fl
 	}
 }
 //getting readings from DB
-private static LinkedHashMap<String,FloorReading> getReadingsFromDB(String url) throws IOException{
+private  LinkedHashMap<String,FloorReading> getReadingsFromDB(String url) throws IOException{
 	
 		HttpResponse<String> response = getMethod(url);
 		if(response.statusCode() == 200) {
@@ -263,7 +272,7 @@ private static LinkedHashMap<String,FloorReading> getReadingsFromDB(String url) 
 }
 
 //getting tenant readings from DB
-public static LinkedHashMap<String,FloorReading> getTenantReadings(String buildingName, String dateLabel) {
+public  LinkedHashMap<String,FloorReading> getTenantReadings(String buildingName, String dateLabel) {
 	
 	try {
 		String encodedBuildingName = URLEncoder.encode(buildingName,"UTF-8");
@@ -279,7 +288,7 @@ public static LinkedHashMap<String,FloorReading> getTenantReadings(String buildi
 	}
 }
 //getting floor readings from DB
-public static LinkedHashMap<String,FloorReading> getFloorReadings(String buildingName, String dateLabel) {
+public  LinkedHashMap<String,FloorReading> getFloorReadings(String buildingName, String dateLabel) {
 	
 	try {
 		String encodedBuildingName = URLEncoder.encode(buildingName,"UTF-8");
@@ -296,7 +305,7 @@ public static LinkedHashMap<String,FloorReading> getFloorReadings(String buildin
 
 }
 //getting readings temporarily stored on server
-private static LinkedHashMap<String,FloorReading> getReadingsFromTempo(String url) throws IOException{
+private  LinkedHashMap<String,FloorReading> getReadingsFromTempo(String url) throws IOException{
 
 		HttpResponse<String> response = getMethod(url);	
 		if(response.statusCode() == 200) {	
@@ -312,7 +321,7 @@ private static LinkedHashMap<String,FloorReading> getReadingsFromTempo(String ur
 		}
 }
 //getting tenant readings temporarily stored on server
-public static LinkedHashMap<String,FloorReading> getTenantReadingsFromTempo(String buildingName) {
+public  LinkedHashMap<String,FloorReading> getTenantReadingsFromTempo(String buildingName) {
 	
 	try {
 		String encodedBuildingName = URLEncoder.encode(buildingName,"UTF-8");
@@ -327,7 +336,7 @@ public static LinkedHashMap<String,FloorReading> getTenantReadingsFromTempo(Stri
 	}
 }
 //getting floor readings temporarily stored on server
-public static LinkedHashMap<String,FloorReading> getFloorReadingsFromTempo(String buildingName) {
+public  LinkedHashMap<String,FloorReading> getFloorReadingsFromTempo(String buildingName) {
 	
 	try {
 		String encodedBuildingName = URLEncoder.encode(buildingName,"UTF-8");
@@ -342,7 +351,7 @@ public static LinkedHashMap<String,FloorReading> getFloorReadingsFromTempo(Strin
 	}
 }
 //before opening input screen,check whether that buliding's data is being made
-public static Boolean checkForBuilding(String buildingName) {
+public  Boolean checkForBuilding(String buildingName) {
 	
 	try {
 		String encodedBuildingName = URLEncoder.encode(buildingName,"UTF-8");
@@ -363,7 +372,7 @@ public static Boolean checkForBuilding(String buildingName) {
 }
 
 //method for updating comments for readings of each tenant
-public static void storeComments(LinkedHashMap<String,String> commentData, String buildingName) {
+public  void storeComments(LinkedHashMap<String,String> commentData, String buildingName) {
 	
 	try {
 		String encodedBuildingName =URLEncoder.encode(buildingName,"UTF-8"); 
@@ -377,7 +386,7 @@ public static void storeComments(LinkedHashMap<String,String> commentData, Strin
 	}
 }
 //method to iterate through app's image file and send each image file to server
-private static void fileUpload(HttpRequestBase request,String fileName, byte[] imageData) throws IOException,CustomException{
+private  void fileUpload(HttpRequestBase request,String fileName, byte[] imageData) throws IOException,CustomException{
 	
     			CloseableHttpClient client = HttpClients.createDefault();
     			try {
@@ -393,6 +402,7 @@ private static void fileUpload(HttpRequestBase request,String fileName, byte[] i
     				if(request instanceof HttpPut) {
     					((HttpPut)request).setEntity(entity);
     				}
+    				request.setHeader("Authorization", "Bearer "+tokenManager.getToken());
     				
     				CloseableHttpResponse response = client.execute(request);
     				if(response.getStatusLine().getStatusCode() == 400) {
@@ -406,19 +416,20 @@ private static void fileUpload(HttpRequestBase request,String fileName, byte[] i
     			}  		
     	}
 
-public static void storeImages(String fileName, byte[] imageData) throws IOException,CustomException{
+public  void storeImages(String fileName, byte[] imageData) throws IOException,CustomException{
 	HttpPost request = new HttpPost("http://localhost:8080/api/kenshin/central/images/upload");
 	fileUpload(request,fileName,imageData);
 }
 
-public static void updateImages(String fileName, byte[] imageData) throws IOException,CustomException{
+public  void updateImages(String fileName, byte[] imageData) throws IOException,CustomException{
 	HttpPut request = new HttpPut("http://localhost:8080/api/kenshin/central/images/upload");
 	fileUpload(request,fileName,imageData);
 }
 
-public static byte[] getImages(String fileName) throws IOException,CustomException{
+public  byte[] getImages(String fileName) throws IOException,CustomException{
 	String encodedFileName = URLEncoder.encode(fileName,"UTF-8");
 	HttpGet request = new HttpGet("http://localhost:8080/api/kenshin/central/images/download?file_name="+encodedFileName);
+	request.setHeader("Authorization", "Bearer "+tokenManager.getToken());
 	CloseableHttpClient client = HttpClients.createDefault();
 	CloseableHttpResponse response = client.execute(request);
 		try {
@@ -437,7 +448,7 @@ public static byte[] getImages(String fileName) throws IOException,CustomExcepti
 		}
 	}
 
-public static void approve(String buildingName,String dateLabel) {
+public  void approve(String buildingName,String dateLabel) {
 	try {
 		String encodedBuildingName =URLEncoder.encode(buildingName,"UTF-8"); 
 		String encodedReadingDate = URLEncoder.encode(dateLabel,"UTF-8");
@@ -449,5 +460,45 @@ public static void approve(String buildingName,String dateLabel) {
 		throw new CustomException(e);
 		
 	}
+}
+public  void finalApprove(String buildingName,String dateLabel) {
+	try {
+		String encodedBuildingName =URLEncoder.encode(buildingName,"UTF-8"); 
+		String encodedReadingDate = URLEncoder.encode(dateLabel,"UTF-8");
+			//loop through each reading obj inside HashMap and call post method
+			postMethod("http://localhost:8080/api/kenshin/central/temporary/final_approve?building_name="+encodedBuildingName+"&reading_date="+encodedReadingDate,"Approve");			
+	}
+	catch(IOException e) {
+		e.printStackTrace();
+		throw new CustomException(e);
+		
+	}
+}
+public static HttpResponse<String> loginMethod(AuthRequest authRequest) {
+	
+	HttpClient client = HttpClient.newHttpClient();
+	HttpResponse<String> response;
+	try {
+		ObjectMapper objectMapper = JsonMapper.builder()
+			    .addModule(new JavaTimeModule())
+			    .build();
+		String json = objectMapper.writeValueAsString(authRequest);
+		//Testing
+		System.out.println(json);
+		HttpRequest request = HttpRequest.newBuilder()
+								.header("Content-Type", "application/json")
+								.uri(URI.create("http://localhost:8080/api/kenshin/secure/login"))
+								.POST(HttpRequest.BodyPublishers.ofString(json))
+								.build();
+		response = client.send(request, HttpResponse.BodyHandlers.ofString());
+		return response;
+	}
+	catch(IOException  | InterruptedException e) {
+		e.printStackTrace();
+		throw new CustomException(e);
+	}	
+}
+public void logoutMethod() {
+	this.tokenManager.setToken(null);
 }
 }

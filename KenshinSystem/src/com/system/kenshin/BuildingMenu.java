@@ -61,6 +61,8 @@ public class BuildingMenu extends JFrame implements ActionListener {
 			buildingIcon[i] = new JButton();
 			buildingIcon[i].setText(buildingName.get(i));
 			buildingIcon[i].setIcon(imageIcon);
+			buildingIcon[i].setVerticalTextPosition(JButton.BOTTOM);
+			buildingIcon[i].setHorizontalTextPosition(JButton.CENTER);
 			buttonPanel.add(buildingIcon[i]);
 			buildingIcon[i].addActionListener(this);
 			
@@ -69,7 +71,7 @@ public class BuildingMenu extends JFrame implements ActionListener {
 		// Set the vertical scrollbar policy to "as needed"
         sp.setVerticalScrollBarPolicy(JScrollPane.VERTICAL_SCROLLBAR_ALWAYS);
      // Set the horizontal scrollbar policy to "never" to turn it off
-        sp.setHorizontalScrollBarPolicy(JScrollPane.HORIZONTAL_SCROLLBAR_NEVER);
+        sp.setHorizontalScrollBarPolicy(JScrollPane.HORIZONTAL_SCROLLBAR_ALWAYS);
 
 
         // Set the preferred size of the JScrollPane to enable scrolling
