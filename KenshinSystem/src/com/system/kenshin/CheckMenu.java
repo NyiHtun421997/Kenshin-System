@@ -74,7 +74,8 @@ public class CheckMenu {
 public static void main(String[] args) {
 	String buildingName = "Orix Building";
 	LocalDate readingDate = LocalDate.of(2023, 10, 1);//must follow this ○年○月 pattern
-	HttpService httpService = new HttpService(new TokenManager("eyJhbGciOiJIUzI1NiJ9.eyJzdWIiOiJueWlodHV1bkBnbWFpbC5jb20iLCJpYXQiOjE2OTc4ODY0NzksImV4cCI6MTY5Nzg5NzI3OX0.oOz2ysmy12ZMmwiy17dQ2yCWXOcPTtxgYPQx-wkM-08"));
+	HttpService httpService = new HttpService(new TokenManager("eyJhbGciOiJIUzI1NiJ9.eyJzdWIiOiJueWlodHV1bkBnbWFpbC5jb20iLCJpYXQiOjE2OTc4ODY0NzksImV4cCI6MTY5Nzg5NzI3OX0.oOz2ysmy12ZMmwiy17dQ2yCWXOcPTtxgYPQx-wkM-08"
+			),"192.168.11.6");
 	//will be populated from server
 	List<String> floor = httpService.getFloorListForBld(buildingName);
 	
@@ -142,12 +143,8 @@ public static void main(String[] args) {
 			setJMenuBar(menuBar);
 			tempSave.addActionListener((ActionEvent ae)->{
 						
-				//Creating a confirmation dialog box before moving to CS01
-				ImageIcon decorativeIcon = new ImageIcon("resources/images/ask.png");
-				Image decorativeImage = decorativeIcon.getImage();
-				decorativeIcon = new ImageIcon(decorativeImage.getScaledInstance(50, 50, Image.SCALE_SMOOTH));
-		
-		        int choice = JOptionPane.showConfirmDialog(null,"Do you want to save the readings?", "Confirmation", JOptionPane.YES_NO_OPTION,JOptionPane.QUESTION_MESSAGE,decorativeIcon);
+				//Creating a confirmation dialog box before moving to CS01	
+		        int choice = confirmationMenu("Do you want to save the readings?", "Confirmation");
 				
 		        if(choice == JOptionPane.YES_OPTION) {
 		        	//call storeToTempMap method for lastetMonth
@@ -159,14 +156,9 @@ public static void main(String[] args) {
 					}	
 		        }
 			});
-			nextMenu.addActionListener((ActionEvent ae)->{
-				
+			nextMenu.addActionListener((ActionEvent ae)->{		
 				//Creating a confirmation dialog box before moving to CS01
-				ImageIcon decorativeIcon = new ImageIcon("resources/images/ask.png");
-				Image decorativeImage = decorativeIcon.getImage();
-				decorativeIcon = new ImageIcon(decorativeImage.getScaledInstance(50, 50, Image.SCALE_SMOOTH));
-		
-		        int choice = JOptionPane.showConfirmDialog(null,"Do you want to proceed to Compare Screen?", "Confirmation", JOptionPane.YES_NO_OPTION,JOptionPane.QUESTION_MESSAGE,decorativeIcon);
+		        int choice = confirmationMenu("Do you want to proceed to Compare Screen?", "Confirmation");
 				
 		        if(choice == JOptionPane.YES_OPTION) {
 		        	//will save all the image files inside app's directory to server and delete them
@@ -199,14 +191,9 @@ public static void main(String[] args) {
 		        else {}
 				
 			});
-			logout.addActionListener((ActionEvent ae)->{
-				
-			    //Creating a confirmation dialog box before moving to CS01
-				ImageIcon decorativeIcon = new ImageIcon("resources/images/ask.png");
-				Image decorativeImage = decorativeIcon.getImage();
-				decorativeIcon = new ImageIcon(decorativeImage.getScaledInstance(50, 50, Image.SCALE_SMOOTH));
-				
-				int choice = JOptionPane.showConfirmDialog(null,"Do you want to logout?", "Logout", JOptionPane.YES_NO_OPTION,JOptionPane.QUESTION_MESSAGE,decorativeIcon);
+			logout.addActionListener((ActionEvent ae)->{			
+			    //Creating a confirmation dialog box before moving to CS01			
+				int choice = confirmationMenu("Do you want to logout?", "Logout");
 						
 				if(choice == JOptionPane.YES_OPTION) {
 				   httpService.logoutMethod();
@@ -507,6 +494,15 @@ public static void main(String[] args) {
 					copyImage(selectedFile);
 				}
 			}
+		}
+		//Sub-program for confirmation menu
+		public int confirmationMenu(String msg,String title) {
+			//Creating a confirmation dialog box before moving to CS01
+					ImageIcon decorativeIcon = new ImageIcon("resources/images/ask.png");
+					Image decorativeImage = decorativeIcon.getImage();
+					decorativeIcon = new ImageIcon(decorativeImage.getScaledInstance(50, 50, Image.SCALE_SMOOTH));
+					
+					return JOptionPane.showConfirmDialog(null,msg, title, JOptionPane.YES_NO_OPTION,JOptionPane.QUESTION_MESSAGE,decorativeIcon);
 		}
 		//Sub-program for resizing of images
 		public Image rescaleImage(String path,int width, int height) {

@@ -60,12 +60,13 @@ public class CompareScreen{
 	//For Testing
 		public static void main(String[] args) {
 			//will accept as arg from IS01/01
-			String buildingName = "Orix Building";
-			LocalDate readingDate = LocalDate.of(2023, 10, 1);
-			HttpService httpService = new HttpService(new TokenManager("eyJhbGciOiJIUzI1NiJ9.eyJzdWIiOiJueWlodHV1bkBnbWFpbC5jb20iLCJpYXQiOjE2OTc4ODc5MzMsImV4cCI6MTY5Nzg5ODczM30.EHDj8f_Blvnpr59dyTtXkZX7n8i89N3Qf4ZNw-DZEKI"));
+			String buildingName = "Daiwa Building";
+			LocalDate readingDate = LocalDate.of(2023, 9, 1);
+			HttpService httpService = new HttpService(new TokenManager(
+					"eyJhbGciOiJIUzI1NiJ9.eyJzdWIiOiJueWlodHV1bkBnbWFpbC5jb20iLCJpYXQiOjE2OTgxNTQ3ODAsImV4cCI6MTY5ODE2NTU4MH0.wCc-LAjh8MqyLtE5dPE8vK_QOXEQdY_MSgUKEtdHYaw"),"192.168.11.6");
 			//will accept as arg from server
 			List<String> floor_Tenant = httpService.getTenantListForBld(buildingName);
-			boolean isLatestMonth = true;
+			boolean isLatestMonth = false;
 		    EventQueue.invokeLater(new Runnable() {
 				@Override
 				public void run() {
@@ -160,34 +161,22 @@ commentData = new LinkedHashMap<>();
  menuBar.add(fileMenu);
  setJMenuBar(menuBar);
  
- saveMenu.addActionListener((ActionEvent ae)->{
-	 
+ saveMenu.addActionListener((ActionEvent ae)->{ 
 	//Creating a confirmation dialog box before moving to MM01
-		ImageIcon decorativeIcon = new ImageIcon("resources/images/ask.png");
-		Image decorativeImage = decorativeIcon.getImage();
-		decorativeIcon = new ImageIcon(decorativeImage.getScaledInstance(50, 50, Image.SCALE_SMOOTH));
-
-     int choice = JOptionPane.showConfirmDialog(null,"Click Yes if data are correct.", "Confirmation", JOptionPane.YES_NO_OPTION,JOptionPane.QUESTION_MESSAGE,decorativeIcon);
+     int choice = confirmationMenu("Click Yes if data are correct.", "Confirmation");
 		
      if(choice == JOptionPane.YES_OPTION) {
-     	//will save all the comments to TempMap or server
-     	
+     	//will save all the comments to TempMap or server  	
      	httpService.storeComments(commentData, buildingName);
      	MainMenu mainMenu = new MainMenu(httpService);
 		 this.dispose();
      }
-     else {}
-	 
+     else {} 
  });
  if(!isLatestMonth) approveMenu.setEnabled(false);
  approveMenu.addActionListener((ActionEvent ae)->{
-	 
 		//Creating a confirmation dialog box before moving to MM01
-			ImageIcon decorativeIcon = new ImageIcon("resources/images/ask.png");
-			Image decorativeImage = decorativeIcon.getImage();
-			decorativeIcon = new ImageIcon(decorativeImage.getScaledInstance(50, 50, Image.SCALE_SMOOTH));
-
-	     int choice = JOptionPane.showConfirmDialog(null,"Would you like to approve the data?", "Confirmation", JOptionPane.YES_NO_OPTION,JOptionPane.QUESTION_MESSAGE,decorativeIcon);
+	     int choice = confirmationMenu("Would you like to approve the data?", "Confirmation");
 			
 	     if(choice == JOptionPane.YES_OPTION) {
 	     	//will invoke a method inside spring controller to save data from TempMap to DB
@@ -202,13 +191,8 @@ commentData = new LinkedHashMap<>();
  
  if(!isLatestMonth) approveMenu.setEnabled(false);
  finalApproveMenu.addActionListener((ActionEvent ae)->{
-	 
 		//Creating a confirmation dialog box before moving to MM01
-			ImageIcon decorativeIcon = new ImageIcon("resources/images/ask.png");
-			Image decorativeImage = decorativeIcon.getImage();
-			decorativeIcon = new ImageIcon(decorativeImage.getScaledInstance(50, 50, Image.SCALE_SMOOTH));
-
-	     int choice = JOptionPane.showConfirmDialog(null,"Would you like to approve the data?", "Confirmation", JOptionPane.YES_NO_OPTION,JOptionPane.QUESTION_MESSAGE,decorativeIcon);
+	     int choice = confirmationMenu("Would you like to approve the data?", "Confirmation");
 			
 	     if(choice == JOptionPane.YES_OPTION) {
 	     	//will invoke a method inside spring controller to save data from TempMap to DB
@@ -220,14 +204,9 @@ commentData = new LinkedHashMap<>();
 	     else {}
 		 
 	 });
- logout.addActionListener((ActionEvent ae)->{
-		
+ logout.addActionListener((ActionEvent ae)->{		
 	    //Creating a confirmation dialog box before moving to CS01
-		ImageIcon decorativeIcon = new ImageIcon("resources/images/ask.png");
-		Image decorativeImage = decorativeIcon.getImage();
-		decorativeIcon = new ImageIcon(decorativeImage.getScaledInstance(50, 50, Image.SCALE_SMOOTH));
-		
-		int choice = JOptionPane.showConfirmDialog(null,"Do you want to logout?", "Logout", JOptionPane.YES_NO_OPTION,JOptionPane.QUESTION_MESSAGE,decorativeIcon);
+		int choice = confirmationMenu("Do you want to logout?", "Logout");
 				
 		if(choice == JOptionPane.YES_OPTION) {
 		   httpService.logoutMethod();
@@ -444,6 +423,7 @@ refreshPage(floor_Tenant.get(floor_TenantIndex));
 				nextButton.doClick();
 			}
 	}
+  
 //Sub-program for resizing of images
 		public Image rescaleImage(String path,int width, int height) {
 			BufferedImage img = null;
@@ -456,6 +436,15 @@ refreshPage(floor_Tenant.get(floor_TenantIndex));
 				e.printStackTrace();
 				return null;
 			}
+		}
+		//Sub-program for confirmation menu
+		public int confirmationMenu(String msg,String title) {
+			//Creating a confirmation dialog box before moving to next screen
+					ImageIcon decorativeIcon = new ImageIcon("resources/images/ask.png");
+					Image decorativeImage = decorativeIcon.getImage();
+					decorativeIcon = new ImageIcon(decorativeImage.getScaledInstance(50, 50, Image.SCALE_SMOOTH));
+					
+					return JOptionPane.showConfirmDialog(null,msg, title, JOptionPane.YES_NO_OPTION,JOptionPane.QUESTION_MESSAGE,decorativeIcon);
 		}
 		//Sub-program for converting LocalDate to String
 		public String dateConverter(LocalDate readingDate) {
