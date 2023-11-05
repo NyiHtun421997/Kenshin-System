@@ -1,4 +1,4 @@
-package com.system.kenshin;
+package com.programming.nyihtuun.kenshin_desktop;
 
 import java.io.Serializable;
 import java.time.LocalDate;
