@@ -84,7 +84,7 @@ public class InputScreen {
 			public void run() {
 			try {
 				ReadingOperation operationForAE = new Operation();	
-				InputScreenFrame f = new InputScreenFrame(operationForAE,buildingName,readingDate,floor,new HttpService(new TokenManager(""),"192.168.11.6"));
+				InputScreenFrame f = new InputScreenFrame(operationForAE,buildingName,readingDate,floor,new HttpService(new TokenManager("")));
 				f.setSize(1200,800);
 				f.setVisible(true);
 				f.setResizable(false);
@@ -146,15 +146,24 @@ class InputScreenFrame extends JFrame implements ItemListener,ActionListener,Cal
 		tempSave.addActionListener((ActionEvent ae)->{
 			
 			//Creating a confirmation dialog box before moving to CS01
-			int choice = confirmationMenu("Do you want to save the readings?","Confirmation");
+			ImageIcon decorativeIcon = new ImageIcon("resources/images/ask.png");
+			Image decorativeImage = decorativeIcon.getImage();
+			decorativeIcon = new ImageIcon(decorativeImage.getScaledInstance(50, 50, Image.SCALE_SMOOTH));
+	
+	        int choice = JOptionPane.showConfirmDialog(null,"Do you want to save the readings?", "Confirmation", JOptionPane.YES_NO_OPTION,JOptionPane.QUESTION_MESSAGE,decorativeIcon);
 			
 	        if(choice == JOptionPane.YES_OPTION) {
 	        	httpService.storeToTempMap(operationForAE.getAllReadings());
 	        }
 		});
 	        nextMenu.addActionListener((ActionEvent ae)->{
+			
 			//Creating a confirmation dialog box before moving to CS01
-	        int choice = confirmationMenu("Do you want to proceed to Compare Screen?", "Confirmation");
+			ImageIcon decorativeIcon = new ImageIcon("resources/images/ask.png");
+			Image decorativeImage = decorativeIcon.getImage();
+			decorativeIcon = new ImageIcon(decorativeImage.getScaledInstance(50, 50, Image.SCALE_SMOOTH));
+	
+	        int choice = JOptionPane.showConfirmDialog(null,"Do you want to proceed to Compare Screen?", "Confirmation", JOptionPane.YES_NO_OPTION,JOptionPane.QUESTION_MESSAGE,decorativeIcon);
 			
 	        if(choice == JOptionPane.YES_OPTION) {
 	        	httpService.storeToTempMap(operationForAE.getAllReadings());
@@ -190,7 +199,7 @@ class InputScreenFrame extends JFrame implements ItemListener,ActionListener,Cal
 		Image decorativeImage = decorativeIcon.getImage();
 		decorativeIcon = new ImageIcon(decorativeImage.getScaledInstance(50, 50, Image.SCALE_SMOOTH));
 		
-		int choice = confirmationMenu("Do you want to logout?", "Logout");
+		int choice = JOptionPane.showConfirmDialog(null,"Do you want to logout?", "Logout", JOptionPane.YES_NO_OPTION,JOptionPane.QUESTION_MESSAGE,decorativeIcon);
 				
 		if(choice == JOptionPane.YES_OPTION) {
 		   httpService.logoutMethod();
@@ -533,16 +542,6 @@ class InputScreenFrame extends JFrame implements ItemListener,ActionListener,Cal
 			return null;
 		}
 	}
-	//Sub-program for confirmation menu
-	public int confirmationMenu(String msg,String title) {
-		//Creating a confirmation dialog box before moving to next screens
-				ImageIcon decorativeIcon = new ImageIcon("resources/images/ask.png");
-				Image decorativeImage = decorativeIcon.getImage();
-				decorativeIcon = new ImageIcon(decorativeImage.getScaledInstance(50, 50, Image.SCALE_SMOOTH));
-				
-				return JOptionPane.showConfirmDialog(null,msg, title, JOptionPane.YES_NO_OPTION,JOptionPane.QUESTION_MESSAGE,decorativeIcon);
-	}
-	
 	//Sub-program for converting LocalDate to String
 			public String dateConverter(LocalDate readingDate) {
 				if(readingDate == null) {

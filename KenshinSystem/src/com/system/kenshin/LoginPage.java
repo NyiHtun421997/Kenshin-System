@@ -19,10 +19,9 @@ public class LoginPage extends JFrame implements ActionListener{
 	}
 	
 	JButton jb1,jb2;
-	JTextField tf1,tf3;
+	JTextField tf1;
 	JPasswordField tf2;
-	JLabel l1,l2,l3,message_Label;
-	private String serverIP;
+	JLabel l1,l2,message_Label;
 	
 	//Constructor
 	LoginPage()
@@ -44,31 +43,23 @@ public class LoginPage extends JFrame implements ActionListener{
 		l2.setBounds(50,150,75,25);
 		tf2.setBounds(130,150,200,25);
 		
-		//ServerIpAddress
-		tf3=new JTextField();
-		l3=new JLabel("Server IP: ");
-		l3.setBounds(50,200,75,25);
-		tf3.setBounds(130,200,200,25);
-		
 		//Buttons
-		jb1.setBounds(130,250,100,25);
+		jb1.setBounds(130,200,100,25);
 		jb1.addActionListener(this);
-		jb2.setBounds(230,250,100,25);
+		jb2.setBounds(230,200,100,25);
 		jb2.addActionListener(this);
 		
 		//Message Text
 		message_Label=new JLabel();
-		message_Label.setBounds(40,300,300,35);
+		message_Label.setBounds(40,250,300,35);
 		message_Label.setHorizontalAlignment(SwingConstants.CENTER);
 		message_Label.setFont(new Font(null,Font.ITALIC,14));
 		
 		add(l1);
 		add(l2);
-		add(l3);
 		add(message_Label);
 		add(tf1);
 		add(tf2);
-		add(tf3);
 		add(jb1);
 		add(jb2);
 		
@@ -92,10 +83,9 @@ public class LoginPage extends JFrame implements ActionListener{
 		{
 			String username=tf1.getText();
 			String password=String.valueOf(tf2.getText());
-			serverIP = tf3.getText();
 			String jwt;
 			AuthRequest authRequest = new AuthRequest(username,password);
-			HttpResponse<String> response = HttpService.loginMethod(authRequest,serverIP);
+			HttpResponse<String> response = HttpService.loginMethod(authRequest);
 			
 				if(response.statusCode() == 200)
 				{
@@ -104,7 +94,7 @@ public class LoginPage extends JFrame implements ActionListener{
 					jwt = response.body();
 					System.out.println(jwt);
 					TokenManager tokenManager = new TokenManager(jwt);
-					HttpService httpService = new HttpService(tokenManager,serverIP);
+					HttpService httpService = new HttpService(tokenManager);
 					new MainMenu(httpService);
 					this.dispose();
 				}

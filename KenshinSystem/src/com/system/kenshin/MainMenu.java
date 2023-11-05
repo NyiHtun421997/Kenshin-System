@@ -198,7 +198,7 @@ public class MainMenu extends JFrame implements ActionListener,CallBack{
 			@Override
 			public void run() {
 			try {
-				MainMenu mMenu = new MainMenu(new HttpService(new TokenManager(""),"192.168.11.6"));
+				MainMenu mMenu = new MainMenu(new HttpService(new TokenManager("")));
 } 
 			catch (Exception e) {
 					e.printStackTrace();
