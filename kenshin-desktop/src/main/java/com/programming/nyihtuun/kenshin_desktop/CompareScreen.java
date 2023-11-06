@@ -206,7 +206,7 @@ nextButton.setBounds(690,120,80,80);
 nextButton.setOpaque(true);
 nextButton.setBorder(BorderFactory.createEmptyBorder(10, 10, 10, 10));
 nextButton.setBackground(new Color(237, 244, 255));
-ImageIcon imageIcon = new ImageIcon(rescaleImage("resources/images/next.png",nextButton.getWidth()-140,nextButton.getHeight()-20));
+ImageIcon imageIcon = new ImageIcon(rescaleImage("/images/next.png",nextButton.getWidth()-140,nextButton.getHeight()-20));
 nextButton.setIcon(imageIcon);
 nextButton.addActionListener(this);
 
@@ -218,7 +218,7 @@ locationButton.setBounds(500,120,200,80);
 locationButton.setOpaque(true);
 locationButton.setBorder(BorderFactory.createEmptyBorder(10, 10, 10, 10));
 locationButton.setBackground(new Color(237, 244, 255));
-imageIcon = new ImageIcon(rescaleImage("resources/images/destination.png",locationButton.getWidth()-140,locationButton.getHeight()-20));
+imageIcon = new ImageIcon(rescaleImage("/images/destination.png",locationButton.getWidth()-140,locationButton.getHeight()-20));
 locationButton.setIcon(imageIcon);
 locationButton.addActionListener(this);
 
@@ -227,7 +227,7 @@ prevButton.setBounds(430,120,80,80);
 prevButton.setOpaque(true);
 prevButton.setBorder(BorderFactory.createEmptyBorder(10, 10, 10, 10));
 prevButton.setBackground(new Color(237, 244, 255));
-imageIcon = new ImageIcon(rescaleImage("resources/images/previous.png",prevButton.getWidth()-140,prevButton.getHeight()-20));
+imageIcon = new ImageIcon(rescaleImage("/images/previous.png",prevButton.getWidth()-140,prevButton.getHeight()-20));
 prevButton.setIcon(imageIcon);
 prevButton.addActionListener(this);
 
@@ -404,7 +404,7 @@ refreshPage(floor_Tenant.get(floor_TenantIndex));
 		public Image rescaleImage(String path,int width, int height) {
 			BufferedImage img = null;
 			try{
-				img = ImageIO.read(new File(path));
+				img = ImageIO.read(CompareScreen.class.getResourceAsStream(path));
 				Image resizedImage = img.getScaledInstance(width, height, Image.SCALE_SMOOTH);
 				return resizedImage;
 			}
@@ -416,9 +416,7 @@ refreshPage(floor_Tenant.get(floor_TenantIndex));
 		//Sub-program for confirmation menu
 		public int confirmationMenu(String msg,String title) {
 			//Creating a confirmation dialog box before moving to next screen
-					ImageIcon decorativeIcon = new ImageIcon("resources/images/ask.png");
-					Image decorativeImage = decorativeIcon.getImage();
-					decorativeIcon = new ImageIcon(decorativeImage.getScaledInstance(50, 50, Image.SCALE_SMOOTH));
+			ImageIcon decorativeIcon = new ImageIcon(rescaleImage("/images/ask.png", 50, 50));
 					
 					return JOptionPane.showConfirmDialog(null,msg, title, JOptionPane.YES_NO_OPTION,JOptionPane.QUESTION_MESSAGE,decorativeIcon);
 		}

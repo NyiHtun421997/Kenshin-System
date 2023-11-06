@@ -192,7 +192,7 @@ public class CheckMenu {
 			b2.setHorizontalAlignment(SwingConstants.CENTER);
 			b2.setBorder(BorderFactory.createEmptyBorder(10, 10, 10, 10));
 			b2.setBackground(new Color(237, 244, 255));
-			ImageIcon floorIcon = new ImageIcon(rescaleImage("resources/images/floor_icon.png",b2.getWidth()-65,b2.getHeight()-20));
+			ImageIcon floorIcon = new ImageIcon(rescaleImage("/images/floor_icon.png",b2.getWidth()-65,b2.getHeight()-20));
 			b2.setIcon(floorIcon);
 			b2.setVerticalTextPosition(JButton.BOTTOM);
 			b2.setHorizontalTextPosition(JButton.CENTER);
@@ -328,7 +328,7 @@ public class CheckMenu {
 			photo.setBackground(new Color(237, 244, 255));
 			photo.setHorizontalAlignment(SwingConstants.CENTER);
 			//Get resized image as return value by calling customized rescaleImage()method and pass it as arg to icon
-			ImageIcon imageIcon = new ImageIcon(rescaleImage("resources/images/default_photo.png",photo.getWidth(),photo.getHeight()));
+			ImageIcon imageIcon = new ImageIcon(rescaleImage("/images/default_photo.png",photo.getWidth(),photo.getHeight()));
 			photo.setIcon(imageIcon);
 			photo.addActionListener(this);
 			
@@ -476,17 +476,14 @@ public class CheckMenu {
 		//Sub-program for confirmation menu
 		public int confirmationMenu(String msg,String title) {
 			//Creating a confirmation dialog box before moving to CS01
-					ImageIcon decorativeIcon = new ImageIcon("resources/images/ask.png");
-					Image decorativeImage = decorativeIcon.getImage();
-					decorativeIcon = new ImageIcon(decorativeImage.getScaledInstance(50, 50, Image.SCALE_SMOOTH));
-					
+			ImageIcon decorativeIcon = new ImageIcon(rescaleImage("/images/ask.png", 50, 50));
 					return JOptionPane.showConfirmDialog(null,msg, title, JOptionPane.YES_NO_OPTION,JOptionPane.QUESTION_MESSAGE,decorativeIcon);
 		}
 		//Sub-program for resizing of images
 		public Image rescaleImage(String path,int width, int height) {
 			BufferedImage img = null;
 			try{
-				img = ImageIO.read(new File(path));
+				img = ImageIO.read(CheckMenu.class.getResourceAsStream(path));
 				Image resizedImage = img.getScaledInstance(width, height, Image.SCALE_SMOOTH);
 				return resizedImage;
 			}
@@ -570,7 +567,7 @@ public class CheckMenu {
 	        	
 	        	
 	        }
-	        else displayImage("resources/images/default_photo.png");
+	        else displayImage("/images/default_photo.png");
 		}	
 		//Observer will execute this method,once there is a change in it's subject
 		//meaning if a button is clicked in BM01 or FM01,these methods will be invoked

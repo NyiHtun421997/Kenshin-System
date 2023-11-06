@@ -42,7 +42,7 @@ public class ChoiceMenu extends JFrame implements ActionListener {
 		BufferedImage img ;
 		ImageIcon imageIcon=null;
 		try{
-			img = ImageIO.read(new File("resources/images/floor_icon.png"));
+			img = ImageIO.read(ChoiceMenu.class.getResourceAsStream("/images/floor_icon.png"));
 			Image resizedImage = img.getScaledInstance(100, 100, Image.SCALE_SMOOTH);
 			imageIcon = new ImageIcon(resizedImage);
 		}

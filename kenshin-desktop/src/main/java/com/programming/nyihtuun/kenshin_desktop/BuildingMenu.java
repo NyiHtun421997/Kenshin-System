@@ -1,15 +1,11 @@
 package com.programming.nyihtuun.kenshin_desktop;
 
-import java.awt.Component;
 import java.awt.Dimension;
-import java.awt.EventQueue;
-import java.awt.FlowLayout;
 import java.awt.GridLayout;
 import java.awt.Image;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.awt.image.BufferedImage;
-import java.io.File;
 import java.io.IOException;
 import java.util.List;
 
@@ -47,7 +43,7 @@ public class BuildingMenu extends JFrame implements ActionListener {
 		BufferedImage img ;
 		ImageIcon imageIcon=null;
 		try{
-			img = ImageIO.read(new File("resources/images/building_icon.png"));
+			img = ImageIO.read(BuildingMenu.class.getResourceAsStream("/images/building_icon.png"));
 			Image resizedImage = img.getScaledInstance(100, 100, Image.SCALE_SMOOTH);
 			imageIcon = new ImageIcon(resizedImage);
 		}

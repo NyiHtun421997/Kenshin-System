@@ -60,10 +60,7 @@ public class MainMenu extends JFrame implements ActionListener,CallBack{
 		logout.addActionListener((ActionEvent ae)->{
 			
 		    //Creating a confirmation dialog box before moving to CS01
-			ImageIcon decorativeIcon = new ImageIcon("resources/images/ask.png");
-			Image decorativeImage = decorativeIcon.getImage();
-			decorativeIcon = new ImageIcon(decorativeImage.getScaledInstance(50, 50, Image.SCALE_SMOOTH));
-			
+			ImageIcon decorativeIcon = new ImageIcon(rescaleImage("/images/ask.png", 50, 50));	
 			int choice = JOptionPane.showConfirmDialog(null,"Do you want to logout?", "Logout", JOptionPane.YES_NO_OPTION,JOptionPane.QUESTION_MESSAGE,decorativeIcon);
 					
 			if(choice == JOptionPane.YES_OPTION) {
@@ -82,7 +79,7 @@ public class MainMenu extends JFrame implements ActionListener,CallBack{
 		inputButton.setOpaque(true);
 		inputButton.setBorder(BorderFactory.createEmptyBorder(10, 10, 10, 10));
 		inputButton.setBackground(new Color(237, 244, 255));
-		ImageIcon imageIcon = new ImageIcon(rescaleImage("resources/images/input.png",inputButton.getWidth(),inputButton.getHeight()));
+		ImageIcon imageIcon = new ImageIcon(rescaleImage("/images/input.png",inputButton.getWidth(),inputButton.getHeight()));
 		inputButton.setIcon(imageIcon);
 		inputButton.addActionListener(this);
 		
@@ -96,7 +93,7 @@ public class MainMenu extends JFrame implements ActionListener,CallBack{
 		checkButton.setOpaque(true);
 		checkButton.setBorder(BorderFactory.createEmptyBorder(10, 10, 10, 10));
 		checkButton.setBackground(new Color(237, 244, 255));
-		imageIcon = new ImageIcon(rescaleImage("resources/images/check.png",checkButton.getWidth(),checkButton.getHeight()));
+		imageIcon = new ImageIcon(rescaleImage("/images/check.png",checkButton.getWidth(),checkButton.getHeight()));
 		checkButton.setIcon(imageIcon);
 		checkButton.addActionListener(this);
 
@@ -115,7 +112,7 @@ public class MainMenu extends JFrame implements ActionListener,CallBack{
 		buildingButton.setOpaque(true);
 		buildingButton.setBorder(BorderFactory.createEmptyBorder(10, 10, 10, 10));
 		buildingButton.setBackground(new Color(237, 244, 255));
-		imageIcon = new ImageIcon(rescaleImage("resources/images/buildings.png",buildingButton.getWidth(),buildingButton.getHeight()));
+		imageIcon = new ImageIcon(rescaleImage("/images/buildings.png",buildingButton.getWidth(),buildingButton.getHeight()));
 		buildingButton.setIcon(imageIcon);
 		buildingButton.addActionListener(this);
 		
@@ -167,10 +164,7 @@ public class MainMenu extends JFrame implements ActionListener,CallBack{
 			if(currentBuildingLabel!="") {
 				
 				//will ask user to check data for latest month or other months
-				ImageIcon decorativeIcon = new ImageIcon("resources/images/ask.png");
-				Image decorativeImage = decorativeIcon.getImage();
-				decorativeIcon = new ImageIcon(decorativeImage.getScaledInstance(50, 50, Image.SCALE_SMOOTH));
-		
+				ImageIcon decorativeIcon = new ImageIcon(rescaleImage("/images/ask.png", 50, 50));	
 		        int choice = JOptionPane.showConfirmDialog(null,"Do you want to check data for Latest Month?", "Confirmation", JOptionPane.YES_NO_OPTION,JOptionPane.QUESTION_MESSAGE,decorativeIcon);	
 		        if(choice == JOptionPane.YES_OPTION) {
 		        	//call HttpService method to get LinkedHashMap data for readings
@@ -198,7 +192,7 @@ public class MainMenu extends JFrame implements ActionListener,CallBack{
 			@Override
 			public void run() {
 			try {
-				MainMenu mMenu = new MainMenu(new HttpService(new TokenManager(""),"192.168.11.6"));
+				MainMenu mMenu = new MainMenu(new HttpService(new TokenManager("eyJhbGciOiJIUzI1NiJ9.eyJzdWIiOiJueWlodHV1bkBnbWFpbC5jb20iLCJpYXQiOjE2OTkyNjk4NzQsImV4cCI6MTY5OTI4MDY3NH0.h4aSrvgHBd4ieTGG6WzOx9gETupSzcqvDDn7Idls0nM"),"192.168.11.6"));
 } 
 			catch (Exception e) {
 					e.printStackTrace();
@@ -209,7 +203,7 @@ public class MainMenu extends JFrame implements ActionListener,CallBack{
 		public Image rescaleImage(String path,int width,int height) {
 			BufferedImage img = null;
 			try{
-				img = ImageIO.read(new File(path));
+				img = ImageIO.read(MainMenu.class.getResourceAsStream(path));
 				Image resizedImage = img.getScaledInstance(width, height, Image.SCALE_SMOOTH);
 				return resizedImage;
 			}
@@ -236,9 +230,7 @@ public class MainMenu extends JFrame implements ActionListener,CallBack{
 		if(b == checkButton) {
 			//User will finish choosing a month to check and then will ask user to continue to CheckMenu
 			//Creating a confirmation dialog box before moving to CH01
-			ImageIcon decorativeIcon = new ImageIcon("resources/images/ask.png");
-			Image decorativeImage = decorativeIcon.getImage();
-			decorativeIcon = new ImageIcon(decorativeImage.getScaledInstance(50, 50, Image.SCALE_SMOOTH));
+			ImageIcon decorativeIcon = new ImageIcon(rescaleImage("/images/ask.png", 50, 50));
 	
 	        int choice = JOptionPane.showConfirmDialog(null,"Do you want to check data for "+componentText+"?", "Confirmation", JOptionPane.YES_NO_OPTION,JOptionPane.QUESTION_MESSAGE,decorativeIcon);	
 	        if(choice == JOptionPane.YES_OPTION) {
