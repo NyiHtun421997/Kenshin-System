@@ -20,7 +20,7 @@ Paperless: Reduces paper usage and analog management.
 Efficiency: Improves efficiency, reliability, and availability of the meter reading process.
 
 #How to start client side desktop app.
--mvn clean -> mvn install -> run jar file
+  - mvn clean install -> java -jar <name of jar file>.jar
 
 日本語
 # 検針システム
@@ -46,5 +46,5 @@ Security:Spring Security with Jwt Authentication（認証）, Role based Authori
 効率化： 検針プロセスの効率性、信頼性、可用性を向上させます。
 
 #クライアント側デスクトップアプリの起動方法。
--mvn clean -> mvn install -> jarファイルの実行
+  - mvn clean install -> java -jar <name of jar file>.jar
 
