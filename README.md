@@ -6,7 +6,7 @@ The main goal is to create Meter Reading System(検針システム) for multiple
 
 Client Side (View): Java Swing(Java Version 19) Java built in Http library and Apache Http Library to connect to Server Ehcache to store image files to be attached,temporarily
 
-Server: Spring Boot(Java Version 17) Framework:Spring Boot 3.1.5 
+Server: Spring Boot(Java Version 17) Framework:Spring Boot 3.1.3 
 Security:Spring Security with Jwt Authentication,Role based Authorization 
 Build Tool: Maven 
 Database: PostgreSQL15 Spring Data Jpa for database schema
