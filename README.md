@@ -21,6 +21,10 @@ Efficiency: Improves efficiency, reliability, and availability of the meter read
 
 #How to start client side desktop app.
   - mvn clean install -> java -jar <name of jar file>.jar
+  - login as ADMIN
+    username:nyihtuun@gmail.com
+    password:messi10hash
+    server_ip:your current ip address
 
 日本語
 # 検針システム
@@ -47,4 +51,8 @@ Security:Spring Boot Starter Security with Jwt Authentication（認証）, Role 
 
 #クライアント側デスクトップアプリの起動方法。
   - mvn clean install -> java -jar <name of jar file>.jar
+  - login as ADMIN
+    username:nyihtuun@gmail.com
+    password:messi10hash
+    server_ip:現在のIPアドレス
 
